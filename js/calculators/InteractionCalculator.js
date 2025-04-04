@@ -1,6 +1,8 @@
 // InteractionCalculator.js
 // Handles calculations related to tea effect interactions
 
+import { validateObject, sortByProperty } from '../utils/helpers.js';
+
 export class InteractionCalculator {
   constructor(config, effectCombinations) {
     this.config = config;
@@ -26,7 +28,8 @@ export class InteractionCalculator {
    * @returns {Object} - Modified scores after applying synergistic interactions
    */
   evaluateSynergisticEffects(scores) {
-    if (!scores || typeof scores !== 'object' || !this.effectCombinations) {
+    scores = validateObject(scores);
+    if (!this.effectCombinations) {
       return scores;
     }
     
@@ -34,9 +37,10 @@ export class InteractionCalculator {
     const modifiedScores = { ...scores };
     
     // Get sorted list of dominant effects (descending order)
-    const sortedEffects = Object.entries(scores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id, score]) => ({ id, score }));
+    const sortedEffects = sortByProperty(
+      Object.entries(scores).map(([id, score]) => ({ id, score })),
+      'score'
+    );
     
     // Apply interactions between primary effects
     for (let i = 0; i < sortedEffects.length - 1; i++) {
@@ -151,14 +155,13 @@ export class InteractionCalculator {
    * @returns {Array} - List of significant interactions with their strength and details
    */
   identifySignificantInteractions(scores) {
-    if (!scores || typeof scores !== 'object') {
-      return [];
-    }
+    scores = validateObject(scores);
     
     // Get sorted list of dominant effects (descending order)
-    const sortedEffects = Object.entries(scores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id, score]) => ({ id, score }));
+    const sortedEffects = sortByProperty(
+      Object.entries(scores).map(([id, score]) => ({ id, score })),
+      'score'
+    );
     
     // Only consider top effects with significant scores
     const significantEffects = sortedEffects
@@ -201,7 +204,7 @@ export class InteractionCalculator {
     }
     
     // Sort interactions by strength (descending)
-    return significantInteractions.sort((a, b) => b.strength - a.strength);
+    return sortByProperty(significantInteractions, 'strength');
   }
 }
 

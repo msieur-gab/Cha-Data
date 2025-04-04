@@ -1,6 +1,8 @@
 // CompoundCalculator.js
 // Handles calculations related to tea compound effects (L-theanine, caffeine)
 
+import { validateObject } from '../utils/helpers.js';
+
 export class CompoundCalculator {
   constructor(config, primaryEffects) {
     this.config = config;
@@ -9,9 +11,7 @@ export class CompoundCalculator {
   
   // Calculate compound levels with enhanced ratio handling
   calculateCompoundLevels(tea) {
-    if (!tea || typeof tea !== 'object') {
-      return {};
-    }
+    tea = validateObject(tea);
     
     // Ensure we have values to work with
     const lTheanineLevel = tea.lTheanineLevel !== undefined ? tea.lTheanineLevel : 5;
@@ -49,7 +49,8 @@ export class CompoundCalculator {
   
   // Calculate purely compound-based effects
   calculateCompoundEffects(tea) {
-    if (!tea || typeof tea !== 'object' || !this.primaryEffects) {
+    tea = validateObject(tea);
+    if (!this.primaryEffects) {
       return {};
     }
     
@@ -140,9 +141,7 @@ export class CompoundCalculator {
   
   // Return a detailed explanation of compound effects for UI display
   getCompoundAnalysis(tea) {
-    if (!tea || typeof tea !== 'object') {
-      return { error: 'Invalid tea object' };
-    }
+    tea = validateObject(tea);
     
     const levels = this.calculateCompoundLevels(tea);
     const lTheanineLevel = tea.lTheanineLevel !== undefined ? tea.lTheanineLevel : 5;

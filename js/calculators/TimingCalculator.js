@@ -1,6 +1,8 @@
 // TimingCalculator.js
 // Calculate optimal drinking times for teas with a scientific approach
 
+import { validateObject, createSafeTea, sortByProperty } from '../utils/helpers.js';
+
 export class TimingCalculator {
     constructor(config, primaryEffects, compoundData) {
         this.config = config;
@@ -65,36 +67,153 @@ export class TimingCalculator {
         this.sleepDisruptionThreshold = 3.0;
     }
     
-    // Calculate optimal timing for a tea based on its properties
-    calculateOptimalTiming(tea) {
+    // Main API method
+    calculate(tea) {
         // Validate tea object
-        if (!tea || typeof tea !== 'object') {
-            return { error: 'Invalid tea object' };
-        }
+        tea = validateObject(tea);
         
-        // Default values for missing properties
-        const safeTea = {
-            caffeineLevel: tea.caffeineLevel !== undefined ? tea.caffeineLevel : 3,
-            lTheanineLevel: tea.lTheanineLevel !== undefined ? tea.lTheanineLevel : 5,
-            type: tea.type || 'unknown',
-            flavorProfile: Array.isArray(tea.flavorProfile) ? tea.flavorProfile : [],
-            processingMethods: Array.isArray(tea.processingMethods) ? tea.processingMethods : []
+        // Use createSafeTea for default values
+        const safeTea = createSafeTea(tea);
+        
+        const inference = this.infer(safeTea);
+        return {
+            inference: this.formatInference(inference),
+            data: this.serialize(inference)
         };
-        
-        // Calculate time-based suitability scores
-        const timeScores = this._calculateTimeScores(safeTea);
-        
-        // Determine best time ranges
-        const bestTimes = this._findBestTimeRanges(timeScores);
-        
-        // Generate full day data for plotting
-        const chartData = this._generateChartData(timeScores);
+    }
+    
+    // Inferencer: Produces raw insights and reasoning
+    infer(tea) {
+        const timeScores = this._calculateTimeScores(tea);
+        const bestTimeRanges = this._findBestTimeRanges(timeScores);
+        const effectAlignment = this._determineEffectAlignment(tea);
+        const lTheanineToCaffeineRatio = tea.lTheanineLevel / tea.caffeineLevel;
         
         return {
             timeScores,
-            bestTimes,
-            chartData,
-            explanation: this._generateExplanation(safeTea, bestTimes)
+            timeRanges: {
+                recommendations: bestTimeRanges.recommendations || [],
+                cautionaryTimes: bestTimeRanges.cautionaryTimes || []
+            },
+            effectAlignment,
+            lTheanineToCaffeineRatio,
+            teaType: tea.type,
+            caffeineLevel: tea.caffeineLevel,
+            lTheanineLevel: tea.lTheanineLevel,
+            primaryEffects: tea.primaryEffects || []
+        };
+    }
+    
+    // Format inference as markdown
+    formatInference(inference) {
+        const { 
+            timeRanges, 
+            effectAlignment, 
+            lTheanineToCaffeineRatio, 
+            teaType, 
+            caffeineLevel, 
+            lTheanineLevel,
+            primaryEffects
+        } = inference;
+        
+        let md = `# ${teaType.charAt(0).toUpperCase() + teaType.slice(1)} Tea Timing Analysis\n\n`;
+        
+        // Tea Properties
+        md += `## Tea Properties\n`;
+        md += `- Caffeine Level: ${caffeineLevel}/10\n`;
+        md += `- L-Theanine Level: ${lTheanineLevel}/10\n`;
+        md += `- L-Theanine to Caffeine Ratio: ${lTheanineToCaffeineRatio.toFixed(2)}:1\n\n`;
+        
+        // Primary Effects
+        md += `## Primary Effects\n`;
+        effectAlignment.forEach(({ effect, score }, index) => {
+            md += `${index + 1}. ${effect.charAt(0).toUpperCase() + effect.slice(1)} (${score.toFixed(1)}/10)\n`;
+        });
+        md += '\n';
+        
+        // Timing Recommendations
+        md += `## Optimal Drinking Times\n`;
+        timeRanges.recommendations.forEach((range, index) => {
+            md += `${index + 1}. ${range.timeRange} (score: ${range.avgScore.toFixed(1)}/10)\n`;
+            md += `   - ${range.reason}\n`;
+        });
+        md += '\n';
+        
+        // Cautionary Times
+        if (timeRanges.cautionaryTimes.length > 0) {
+            md += `## Times to Avoid\n`;
+            timeRanges.cautionaryTimes.forEach((range, index) => {
+                md += `${index + 1}. ${range.timeRange} (score: ${range.avgScore.toFixed(1)}/10)\n`;
+                md += `   - ${range.reason}\n`;
+            });
+            md += '\n';
+        }
+        
+        // Scientific Basis
+        md += `## Scientific Basis\n`;
+        if (caffeineLevel > 6) {
+            md += `- High caffeine content suggests avoiding consumption within ${this.caffeineHalfLife} hours of bedtime\n`;
+        }
+        if (lTheanineToCaffeineRatio > 1.5) {
+            md += `- High L-theanine to caffeine ratio produces a calming effect with focused alertness\n`;
+        } else if (lTheanineToCaffeineRatio < 0.8) {
+            md += `- Lower L-theanine to caffeine ratio produces a more stimulating effect\n`;
+        }
+        
+        // Effect Timing Analysis
+        md += `\n## Effect Timing Analysis\n`;
+        primaryEffects.forEach(effect => {
+            const timing = this.effectTimingMap[effect];
+            if (timing) {
+                const peakHours = timing.peakHours.map(h => 
+                    `${h % 12 || 12}${h < 12 ? 'AM' : 'PM'}`
+                ).join(', ');
+                md += `- ${effect.charAt(0).toUpperCase() + effect.slice(1)}: Peak hours at ${peakHours}\n`;
+            }
+        });
+        
+        return md;
+    }
+    
+    // Serializer: Transforms insights into structured JSON
+    serialize(inference) {
+        const { timeScores, timeRanges } = inference;
+        
+        return {
+            recommended: timeRanges.recommendations.map(range => ({
+                timeOfDay: range.timeRange,
+                score: range.avgScore,
+                reason: range.reason
+            })),
+            notRecommended: timeRanges.cautionaryTimes.map(range => ({
+                timeOfDay: range.timeRange,
+                score: range.avgScore,
+                reason: range.reason
+            })),
+            chartData: {
+                labels: Array.from({ length: 24 }, (_, i) => {
+                    const hour = i % 12 || 12;
+                    return `${hour}${i < 12 ? 'AM' : 'PM'}`;
+                }),
+                datasets: [
+                    {
+                        label: "Tea Suitability",
+                        data: Object.values(timeScores),
+                        type: 'bar',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: "Circadian Alertness",
+                        data: Object.values(this.baselineAlertness),
+                        type: 'line',
+                        yAxisID: 'y1',
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            }
         };
     }
     
@@ -110,6 +229,18 @@ export class TimingCalculator {
         
         // Get effect alignment from tea type and processing
         const effectAlignment = this._determineEffectAlignment(tea);
+        
+        // Time-based scaling factors (stronger contrast between good/bad times)
+        const timeScalingFactors = {
+            // Night hours (very low suitability)
+            0: 0.15, 1: 0.12, 2: 0.1, 3: 0.1, 4: 0.15, 
+            // Early morning (rising suitability)
+            5: 0.3, 6: 0.6, 
+            // Day hours (full potential)
+            7: 0.9, 8: 1.0, 9: 1.0, 10: 1.0, 11: 1.0, 12: 1.0, 13: 1.0, 14: 1.0, 15: 1.0, 16: 0.9,
+            // Evening (declining suitability)
+            17: 0.7, 18: 0.5, 19: 0.4, 20: 0.3, 21: 0.25, 22: 0.2, 23: 0.17
+        };
         
         // Calculate score for each hour
         this.timeIntervals.forEach(hour => {
@@ -135,6 +266,9 @@ export class TimingCalculator {
             // Align with natural alertness cycle
             const alertnessAlignment = this._calculateAlertnessAlignment(hour, effectAlignment);
             score = score * 0.7 + alertnessAlignment * 0.3;
+            
+            // Apply time-based scaling factor
+            score *= timeScalingFactors[hour];
             
             // Normalize score to 0-10 range
             timeScores[hour] = Math.max(0, Math.min(10, score));
@@ -199,10 +333,10 @@ export class TimingCalculator {
         }
         
         // Sort effects by score and return top 3
-        return Object.entries(effectScores)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([effect, score]) => ({ effect, score }));
+        return sortByProperty(
+            Object.entries(effectScores).map(([effect, score]) => ({ effect, score })),
+            'score'
+        ).slice(0, 3);
     }
     
     // Calculate score based on effect timing alignment
@@ -264,25 +398,30 @@ export class TimingCalculator {
         return score;
     }
     
-    // Find best time ranges based on scores
+    // Find the best time ranges for tea consumption
     _findBestTimeRanges(timeScores) {
-        // Convert to array for easier processing
-        const hourScores = Object.entries(timeScores)
-            .map(([hour, score]) => ({ hour: parseInt(hour), score }))
-            .sort((a, b) => a.hour - b.hour);
+        const recommendations = [];
+        const cautionaryTimes = [];
+        
+        // Convert timeScores to array of {hour, score} objects
+        const timeScoreArray = Object.entries(timeScores)
+            .map(([hour, score]) => ({
+                hour: parseInt(hour),
+                score
+            }))
+            .sort((a, b) => b.score - a.score); // Sort by score descending
         
         // Find peaks (local maxima)
-        const peaks = hourScores.filter((entry, i, arr) => {
+        const peaks = timeScoreArray.filter((entry, i, arr) => {
             const prev = i > 0 ? arr[i-1].score : 0;
             const next = i < arr.length - 1 ? arr[i+1].score : 0;
             return entry.score > prev && entry.score > next && entry.score >= 7;
         });
         
         // Group adjacent high-score hours into ranges
-        const ranges = [];
         let currentRange = null;
         
-        hourScores.forEach(entry => {
+        timeScoreArray.forEach(entry => {
             if (entry.score >= 7) {
                 if (!currentRange) {
                     currentRange = { start: entry.hour, end: entry.hour, avgScore: entry.score };
@@ -293,34 +432,100 @@ export class TimingCalculator {
                         currentRange.avgScore = (currentRange.avgScore + entry.score) / 2;
                     } else {
                         // Start new range
-                        ranges.push(currentRange);
+                        recommendations.push({
+                            timeRange: this._formatTimeRange(currentRange.start, currentRange.end),
+                            avgScore: currentRange.avgScore,
+                            reason: this._getTimeRangeReason(currentRange, true)
+                        });
                         currentRange = { start: entry.hour, end: entry.hour, avgScore: entry.score };
                     }
                 }
             } else if (currentRange) {
-                ranges.push(currentRange);
+                recommendations.push({
+                    timeRange: this._formatTimeRange(currentRange.start, currentRange.end),
+                    avgScore: currentRange.avgScore,
+                    reason: this._getTimeRangeReason(currentRange, true)
+                });
                 currentRange = null;
             }
         });
         
         // Add any remaining range
         if (currentRange) {
-            ranges.push(currentRange);
+            recommendations.push({
+                timeRange: this._formatTimeRange(currentRange.start, currentRange.end),
+                avgScore: currentRange.avgScore,
+                reason: this._getTimeRangeReason(currentRange, true)
+            });
         }
         
-        // Sort by average score
-        return ranges.map(range => ({
-            ...range,
-            // Format for display
-            timeRange: `${this._formatHour(range.start)} - ${this._formatHour(range.end)}`
-        })).sort((a, b) => b.avgScore - a.avgScore);
+        // Find cautionary times (low scores)
+        const lowScoreThreshold = 3;
+        let cautionaryStart = null;
+        
+        for (let hour = 0; hour < 24; hour++) {
+            const score = timeScores[hour];
+            
+            if (score < lowScoreThreshold) {
+                if (cautionaryStart === null) {
+                    cautionaryStart = hour;
+                }
+            } else if (cautionaryStart !== null) {
+                cautionaryTimes.push({
+                    timeRange: this._formatTimeRange(cautionaryStart, hour - 1),
+                    avgScore: score,
+                    reason: this._getTimeRangeReason({ start: cautionaryStart, end: hour - 1, score }, false)
+                });
+                cautionaryStart = null;
+            }
+        }
+        
+        // Handle case where cautionary period extends to end of day
+        if (cautionaryStart !== null) {
+            cautionaryTimes.push({
+                timeRange: this._formatTimeRange(cautionaryStart, 23),
+                avgScore: timeScores[23],
+                reason: this._getTimeRangeReason({ start: cautionaryStart, end: 23, score: timeScores[23] }, false)
+            });
+        }
+        
+        return {
+            recommendations,
+            cautionaryTimes
+        };
     }
     
-    // Format hour to AM/PM format
-    _formatHour(hour) {
-        const period = hour < 12 ? 'AM' : 'PM';
-        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-        return `${displayHour}:00 ${period}`;
+    // Format time range as string (e.g., "6AM-9AM")
+    _formatTimeRange(start, end) {
+        const formatHour = hour => {
+            const h = hour % 12 || 12;
+            return `${h}${hour < 12 ? 'AM' : 'PM'}`;
+        };
+        return start === end ? formatHour(start) : `${formatHour(start)}-${formatHour(end)}`;
+    }
+    
+    // Get reason for time range recommendation
+    _getTimeRangeReason(range, isRecommended) {
+        const startHour = range.start;
+        const endHour = range.end;
+        
+        if (isRecommended) {
+            if (startHour >= 5 && endHour <= 11) {
+                return "Morning hours provide optimal alertness and focus";
+            } else if (startHour >= 12 && endHour <= 16) {
+                return "Afternoon hours offer sustained energy without sleep disruption";
+            } else if (startHour >= 17 && endHour <= 20) {
+                return "Early evening hours for relaxation and winding down";
+            }
+        } else {
+            if (startHour >= 21 || endHour <= 4) {
+                return "Night hours may disrupt sleep patterns";
+            } else if (startHour >= 13 && endHour <= 15) {
+                return "Post-lunch hours may cause drowsiness";
+            }
+        }
+        
+        return isRecommended ? "Optimal time based on tea properties" : "Less ideal time for consumption";
     }
     
     // Generate chart-ready data
@@ -361,6 +566,59 @@ export class TimingCalculator {
         }
         
         return explanation;
+    }
+
+    // Generate chart data for visualization
+    _generateChartData() {
+        const labels = Array.from({ length: 24 }, (_, i) => {
+            const hour = i % 12 || 12;
+            return `${hour}${i < 12 ? 'AM' : 'PM'}`;
+        });
+
+        const timeScores = this._calculateTimeScores(this.tea);
+        const teaData = Object.values(timeScores);
+        const circadianData = Object.values(this.baselineAlertness);
+
+        return {
+            labels,
+            datasets: [
+                {
+                    label: "Tea Suitability",
+                    data: teaData,
+                    type: 'bar',
+                    yAxisID: 'y'
+                },
+                {
+                    label: "Circadian Alertness",
+                    data: circadianData,
+                    type: 'line',
+                    yAxisID: 'y1',
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        };
+    }
+
+    // Format timing recommendations for JSON export
+    _formatTimingRecommendations() {
+        const timeRanges = this._findBestTimeRanges();
+        return {
+            recommended: timeRanges.recommendations.map(timeRange => ({
+                timeOfDay: timeRange.timeRange,
+                score: timeRange.avgScore,
+                reason: timeRange.reason || "Optimal time based on tea properties and circadian rhythm"
+            })),
+            notRecommended: timeRanges.cautionaryTimes.map(timeRange => ({
+                timeOfDay: timeRange.timeRange,
+                score: timeRange.avgScore,
+                reason: timeRange.reason || "Not recommended due to time of day and tea properties"
+            })),
+            chartData: this._generateChartData(),
+            explanation: this._generateExplanation()
+        };
     }
 }
 

@@ -1,0 +1,90 @@
+{
+  "tea": {
+    "name": "String: Full name of the tea",
+    "type": "String: Tea type (green, black, oolong, etc.)",
+    "origin": "String: Geographical origin of the tea",
+    "altitude": "Number: Altitude where the tea was grown (meters)",
+    "processing": "String: Processing method used"
+  },
+  "composition": {
+    "lTheanine": "Number: L-Theanine level (0-10 scale)",
+    "caffeine": "Number: Caffeine level (0-10 scale)",
+    "ratio": "Number: L-Theanine to Caffeine ratio",
+    "ratioInterpretation": "String: Description of what the ratio means"
+  },
+  "effects": {
+    "primary": [
+      {
+        "name": "String: Effect name",
+        "score": "Number: Effect score (0-10 scale)"
+      }
+    ],
+    "all": [
+      {
+        "name": "String: Effect name",
+        "score": "Number: Effect score (0-10 scale)"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "String: Interaction name",
+        "description": "String: Description of the interaction"
+      }
+    ]
+  },
+  "processing": {
+    "type": "String: Processing method",
+    "effects": [
+      {
+        "name": "String: Effect name",
+        "influence": "Number: Influence level (positive or negative)",
+        "description": "String: Description of how processing affects this effect"
+      }
+    ]
+  },
+  "geography": {
+    "origin": "String: Geographical origin",
+    "altitude": "Number: Altitude in meters",
+    "effects": [
+      {
+        "name": "String: Effect name",
+        "influence": "Number: Influence level (positive or negative)",
+        "description": "String: Description of how geography affects this effect"
+      }
+    ]
+  },
+  "timings": {
+    "recommended": [
+      {
+        "timeOfDay": "String: Time of day code (morning, afternoon, etc.)",
+        "score": "Number: Suitability score (0-10 scale)",
+        "reason": "String: Reason for recommendation"
+      }
+    ],
+    "notRecommended": [
+      {
+        "timeOfDay": "String: Time of day code",
+        "reason": "String: Reason for caution"
+      }
+    ]
+  },
+  "seasons": {
+    "recommended": [
+      {
+        "season": "String: Season name",
+        "score": "Number: Suitability score (0-10 scale)",
+        "reason": "String: Reason for recommendation"
+      }
+    ],
+    "notRecommended": [
+      {
+        "season": "String: Season name",
+        "reason": "String: Reason for caution"
+      }
+    ]
+  },
+  "metadata": {
+    "generatedAt": "String: ISO timestamp of when this data was generated",
+    "version": "String: Version of the export format"
+  }
+} 

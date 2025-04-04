@@ -112,3 +112,62 @@ export class ScoreNormalizer {
 }
 
 export default ScoreNormalizer;
+
+/**
+ * Normalizes scores to a 0-10 scale
+ * @param {Object} scores - Raw effect scores
+ * @returns {Object} Normalized scores
+ */
+export function normalizeScores(scores) {
+    if (!scores || Object.keys(scores).length === 0) {
+        return {};
+    }
+
+    // Find the maximum score
+    const maxScore = Math.max(...Object.values(scores));
+    
+    // If all scores are 0, return the original scores
+    if (maxScore === 0) {
+        return scores;
+    }
+
+    // Normalize all scores to 0-10 scale
+    const normalized = {};
+    Object.entries(scores).forEach(([effect, score]) => {
+        normalized[effect] = (score / maxScore) * 10;
+    });
+
+    return normalized;
+}
+
+/**
+ * Enhances the dominant effect to ensure it stands out
+ * @param {Object} scores - Normalized effect scores
+ * @returns {Object} Scores with enhanced dominant effect
+ */
+export function enhanceDominantEffect(scores) {
+    if (!scores || Object.keys(scores).length === 0) {
+        return {};
+    }
+
+    // Find the highest score
+    const entries = Object.entries(scores);
+    const maxEntry = entries.reduce((max, current) => 
+        current[1] > max[1] ? current : max
+    );
+
+    // If there's no clear dominant effect (all scores similar), return original scores
+    const secondHighest = entries
+        .filter(([effect]) => effect !== maxEntry[0])
+        .reduce((max, current) => current[1] > max[1] ? current : max, ['', 0]);
+
+    if (maxEntry[1] - secondHighest[1] < 1) {
+        return scores;
+    }
+
+    // Enhance the dominant effect
+    const enhanced = { ...scores };
+    enhanced[maxEntry[0]] = Math.min(10, maxEntry[1] + 1);
+
+    return enhanced;
+}

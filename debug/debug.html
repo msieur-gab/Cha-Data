@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tea Analysis - Debug Environment</title>
+    <link rel="stylesheet" href="css/debug-styles.css">
+    <style>
+        /* Additional page-specific styles */
+        .ratio-bars {
+            position: relative;
+            height: 24px;
+            background-color: #f1f3f4;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .l-theanine-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 12px;
+            background-color: #27ae60;
+            border-radius: 4px 0 0 0;
+        }
+        
+        .caffeine-bar {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            height: 12px;
+            background-color: #e74c3c;
+            border-radius: 0 0 0 4px;
+        }
+        
+        .ratio-legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .effect-bar {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .effect-bar-fill {
+            height: 100%;
+            background-color: #3498db;
+            border-radius: 4px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            padding-left: 8px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .timing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .timing-table th, .timing-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .timing-table th {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .season-score {
+            margin-bottom: 1rem;
+        }
+        
+        .season-label {
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="debug-container">
+        <!-- Sidebar -->
+        <aside class="debug-sidebar">
+            <tea-sidebar></tea-sidebar>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="debug-content">
+            <header class="debug-header">
+                <h1 class="debug-title">Tea Analysis Debug Environment</h1>
+                <p class="debug-subtitle">Select a tea from the sidebar to view analysis results</p>
+            </header>
+            
+            <!-- Test sections will be added here dynamically -->
+            <div class="test-sections"></div>
+        </main>
+    </div>
+
+    <script type="module" src="js/debug.js"></script>
+</body>
+</html> 

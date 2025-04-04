@@ -599,7 +599,7 @@ ${seasonalData.explanations.scientific}
             sampleTeas.forEach(tea => {
                 if (!tea) return;
                 
-                const timingData = calculator.calculateOptimalTiming(tea);
+                const timingData = calculator.calculate(tea);
                 
                 html += `
                     <h3>${tea.name} (${tea.type})</h3>
@@ -609,7 +609,7 @@ ${seasonalData.explanations.scientific}
                         </div>
                         <div style="flex: 1;">
                             <h4>Markdown Raw Data</h4>
-                            <pre class="markdown">${generateTimingMarkdown(tea, timingData)}</pre>
+                            <pre class="markdown">${generateTimingMarkdown(tea, timingData.data)}</pre>
                         </div>
                     </div>
                     

@@ -1,6 +1,8 @@
 // ProcessingCalculator.js
 // Handles calculations related to processing method influence on tea effects
 
+import { normalizeString, validateObject, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
+
 export class ProcessingCalculator {
   constructor(config, processingInfluences) {
     this.config = config;
@@ -24,7 +26,7 @@ export class ProcessingCalculator {
     
     // Process each method in the processing methods
     processingMethods.forEach(method => {
-      const normalizedMethod = method.toLowerCase().trim().replace(/\s+/g, '-');
+      const normalizedMethod = normalizeString(method);
       
       // Find exact or partial match
       let matchedInfluence = this.processingInfluences[normalizedMethod];
@@ -85,7 +87,8 @@ export class ProcessingCalculator {
   
   // Calculate the contribution of individual processing methods to a specific effect
   calculateProcessingContributions(tea, effectId) {
-    if (!tea || !tea.processingMethods || !Array.isArray(tea.processingMethods) || !effectId) {
+    tea = validateObject(tea);
+    if (!tea.processingMethods || !Array.isArray(tea.processingMethods) || !effectId) {
       return [];
     }
     
@@ -93,7 +96,7 @@ export class ProcessingCalculator {
     
     // Process each method
     tea.processingMethods.forEach(method => {
-      const normalizedMethod = method.toLowerCase().trim().replace(/\s+/g, '-');
+      const normalizedMethod = normalizeString(method);
       
       // Find exact or partial match
       let matchedInfluence = this.processingInfluences[normalizedMethod];
@@ -130,7 +133,7 @@ export class ProcessingCalculator {
     });
     
     // Sort by contribution strength (descending)
-    return contributions.sort((a, b) => b.contribution - a.contribution);
+    return sortByProperty(contributions, 'contribution');
   }
   
   // Categorize processing methods by type
@@ -154,25 +157,14 @@ export class ProcessingCalculator {
       special: ['shade-grown', 'bug-bitten', 'gaba-processed', 'compressed', 'kill-green', 'minimal-processing']
     };
     
-    // Categorize methods
-    const result = {};
-    
-    Object.entries(categories).forEach(([category, keywords]) => {
-      const methods = processingMethods.filter(method => 
-        keywords.some(keyword => method.toLowerCase().includes(keyword))
-      );
-      
-      if (methods.length > 0) {
-        result[category] = methods;
-      }
-    });
-    
-    return result;
+    // Use the categorizeByKeywords helper function
+    return categorizeByKeywords(processingMethods, categories);
   }
   
   // Generate a descriptive analysis of the processing methods
   getProcessingAnalysis(tea) {
-    if (!tea || !tea.processingMethods || !Array.isArray(tea.processingMethods)) {
+    tea = validateObject(tea);
+    if (!tea.processingMethods || !Array.isArray(tea.processingMethods)) {
       return { 
         description: 'No processing information available',
         primaryMethods: [],
@@ -182,7 +174,7 @@ export class ProcessingCalculator {
     }
     
     const methodCount = tea.processingMethods.length;
-    const primaryMethods = tea.processingMethods.slice(0, 3); // Assume first methods are primary
+    const primaryMethods = getTopItems(tea.processingMethods, 3); // Assume first methods are primary
     const methodCategories = this.categorizeProcessingMethods(tea.processingMethods);
     
     // Determine the primary processing category
@@ -222,14 +214,14 @@ export class ProcessingCalculator {
   
   // Get detailed processing information
   getProcessingDetails(processingMethods) {
-    if (!processingMethods || !Array.isArray(processingMethods)) {
+    if (!Array.isArray(processingMethods)) {
       return [];
     }
     
     const details = [];
     
     processingMethods.forEach(method => {
-      const normalizedMethod = method.toLowerCase().trim().replace(/\s+/g, '-');
+      const normalizedMethod = normalizeString(method);
       
       let matchedInfluence = this.processingInfluences[normalizedMethod];
       let matchedMethod = normalizedMethod;
