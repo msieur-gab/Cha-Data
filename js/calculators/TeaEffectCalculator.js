@@ -7,6 +7,7 @@ import { FlavorCalculator } from './FlavorCalculator.js';
 import { ProcessingCalculator } from './ProcessingCalculator.js';
 import { GeographyCalculator } from './GeographyCalculator.js';
 import { InteractionCalculator } from './InteractionCalculator.js';
+import { PrimaryEffectCalculator } from './PrimaryEffectCalculator.js';
 import { normalizeScores, enhanceDominantEffect } from '../utils/normalization.js';
 
 export class TeaEffectCalculator {
@@ -24,6 +25,7 @@ export class TeaEffectCalculator {
         this.processingCalculator = new ProcessingCalculator(this.config, this.processingInfluences);
         this.geographyCalculator = new GeographyCalculator(this.config);
         this.interactionCalculator = new InteractionCalculator(this.config, this.effectCombinations);
+        this.primaryEffectCalculator = new PrimaryEffectCalculator(this.config);
     }
 
     // Load reference data into the calculator
@@ -110,6 +112,12 @@ export class TeaEffectCalculator {
             expectedEffects: tea.expectedEffects || {}
         };
 
+        // NEW STEP: Use PrimaryEffectCalculator to derive dynamic baseline effects
+        const baselineEffects = this.primaryEffectCalculator.deriveBaselineEffects(safeTea);
+        
+        // Get TCM profile for reference/debug
+        const tcmProfile = this.primaryEffectCalculator.getTcmProfile(safeTea);
+
         // Calculate component scores
         const compoundScores = this.compoundCalculator.calculateCompoundEffects(safeTea) || {};
         const flavorScores = this.flavorCalculator.calculateFlavorInfluence(safeTea.flavorProfile) || {};
@@ -123,15 +131,15 @@ export class TeaEffectCalculator {
             geoScores = this.geographicalInfluences;
         }
 
-        // Generate base scores - including expected effects
+        // Generate base scores - using calculated baseline effects instead of expected effects
         const baseScores = {};
         
-        // Add expected effects to base scores
-        if (safeTea.expectedEffects?.dominant) {
-            baseScores[safeTea.expectedEffects.dominant] = 9.5;
+        // Add baseline effects to base scores
+        if (baselineEffects.dominant) {
+            baseScores[baselineEffects.dominant] = 9.5;
         }
-        if (safeTea.expectedEffects?.supporting) {
-            baseScores[safeTea.expectedEffects.supporting] = 7.5;
+        if (baselineEffects.supporting) {
+            baseScores[baselineEffects.supporting] = 7.5;
         }
         
         // Add L-Theanine to Caffeine ratio effects to base scores
@@ -208,14 +216,15 @@ export class TeaEffectCalculator {
         // Enhance dominant effect
         const finalScores = enhanceDominantEffect(normalizedScores);
         
-        // Ensure expected dominant effect remains dominant after interactions
-        if (safeTea.expectedEffects?.dominant && finalScores[safeTea.expectedEffects.dominant]) {
+        // Ensure baseline dominant effect remains dominant after interactions
+        // Use a smaller boost (0.3 instead of 0.5) to allow more natural emergence of effects
+        if (baselineEffects.dominant && finalScores[baselineEffects.dominant]) {
             // Find the highest score
             const highestScore = Math.max(...Object.values(finalScores));
             
-            // Make sure the expected dominant effect is at least as high as any other effect
-            if (finalScores[safeTea.expectedEffects.dominant] < highestScore) {
-                finalScores[safeTea.expectedEffects.dominant] = highestScore + 0.5;
+            // Make sure the baseline dominant effect is at least as high as any other effect
+            if (finalScores[baselineEffects.dominant] < highestScore) {
+                finalScores[baselineEffects.dominant] = highestScore + 0.3;
             }
         }
 
@@ -262,42 +271,148 @@ export class TeaEffectCalculator {
                 withFlavorScores,
                 withCompoundScores
             },
-            finalScores
+            finalScores,
+            baselineEffects, // Include calculated baseline effects
+            tcmProfile,      // Include TCM profile for reference
+            originalExpectedEffects: safeTea.expectedEffects // Keep original expected effects for comparison
         };
     }
 
     // Format inference as markdown
     formatInference(inference) {
-        if (!inference) return 'No effect analysis available';
+        if (!inference) return "No inference available";
 
-        const { dominantEffect, supportingEffects, additionalEffects, interactions, componentScores = {}, buildUpScores = {}, finalScores = {} } = inference;
+        const { 
+            dominantEffect, 
+            supportingEffects, 
+            additionalEffects, 
+            interactions,
+            componentScores,
+            buildUpScores,
+            baselineEffects,
+            tcmProfile,
+            originalExpectedEffects,
+            finalScores
+        } = inference;
 
-        let markdown = `## Final Calculation Outcome\n\n`;
-        
-        // Helper function to format score with bar
+        // Format as markdown for easy display
+        let markdown = "## Tea Effect Analysis\n\n";
+
+        // Format score bars for visual representation
         const formatScoreBar = (score) => {
+            const fullBar = "█";
+            const emptyBar = "░";
+            
             // Handle invalid or out of range scores
-            if (isNaN(score) || score <= 0) {
-                return '░'.repeat(10);
+            if (isNaN(score) || score < 0) {
+                return emptyBar.repeat(10);
             }
             
-            // Cap the bar length at 10
-            const barLength = Math.min(10, Math.round(score));
-            const emptyLength = Math.max(0, 10 - barLength);
+            // Cap the score at 10 to prevent negative emptyBars
+            const fullBars = Math.min(10, Math.round(score));
+            const emptyBars = Math.max(0, 10 - fullBars);
             
-            return '█'.repeat(barLength) + '░'.repeat(emptyLength);
+            return fullBar.repeat(fullBars) + emptyBar.repeat(emptyBars);
         };
+        
+        // TCM Profile Section (if available)
+        if (tcmProfile && Object.keys(tcmProfile).length > 0) {
+            markdown += `### TCM Profile\n`;
+            if (tcmProfile.yinYang) {
+                markdown += `- **Yin/Yang Nature**: ${tcmProfile.yinYang}\n`;
+            }
+            if (tcmProfile.element) {
+                markdown += `- **Primary Element**: ${tcmProfile.element}\n`;
+            }
+            if (tcmProfile.qiMovement) {
+                markdown += `- **Qi Movement**: ${tcmProfile.qiMovement}\n`;
+            }
+            markdown += '\n';
+        }
+        
+        // Add baseline effects section if available
+        if (baselineEffects) {
+            markdown += `\n\n## Calculated Baseline Effects\n`;
+            
+            if (baselineEffects.dominant) {
+                markdown += `- Dominant: ${baselineEffects.dominant}\n`;
+            }
+            
+            if (baselineEffects.supporting) {
+                if (Array.isArray(baselineEffects.supporting)) {
+                    markdown += `- Supporting: ${baselineEffects.supporting.join(', ')}\n`;
+                } else {
+                    // Handle case where supporting is a single string
+                    markdown += `- Supporting: ${baselineEffects.supporting}\n`;
+                }
+            }
+            
+            // Compare with original expected effects
+            if (originalExpectedEffects && 
+                // Only show comparison if they're not the same object/reference
+                originalExpectedEffects !== baselineEffects) {
+                
+                markdown += `\n## Comparison with Original Expected Effects\n`;
+                
+                // Compare dominant effects
+                if (originalExpectedEffects.dominant) {
+                    const dominantMatch = baselineEffects.dominant === originalExpectedEffects.dominant;
+                    markdown += `- Dominant: ${dominantMatch ? '✓ Match' : `❌ Different (Original: ${originalExpectedEffects.dominant}, Calculated: ${baselineEffects.dominant})`}\n`;
+                }
+                
+                // Compare supporting effects
+                if (originalExpectedEffects.supporting && originalExpectedEffects.supporting.length > 0) {
+                    let supportingMatches = false;
+                    
+                    if (Array.isArray(baselineEffects.supporting) && Array.isArray(originalExpectedEffects.supporting)) {
+                        // Both are arrays - check if all original supporting effects are included in baseline supporting effects
+                        supportingMatches = originalExpectedEffects.supporting.every(effect => 
+                            baselineEffects.supporting.includes(effect));
+                    } else if (!Array.isArray(baselineEffects.supporting) && !Array.isArray(originalExpectedEffects.supporting)) {
+                        // Both are strings - direct comparison
+                        supportingMatches = baselineEffects.supporting === originalExpectedEffects.supporting;
+                    } else if (!Array.isArray(baselineEffects.supporting) && Array.isArray(originalExpectedEffects.supporting)) {
+                        // Baseline is string, original is array - check if baseline string is in original array
+                        supportingMatches = originalExpectedEffects.supporting.includes(baselineEffects.supporting);
+                    } else if (Array.isArray(baselineEffects.supporting) && !Array.isArray(originalExpectedEffects.supporting)) {
+                        // Baseline is array, original is string - check if original string is in baseline array
+                        supportingMatches = baselineEffects.supporting.includes(originalExpectedEffects.supporting);
+                    }
+                        
+                    if (supportingMatches) {
+                        markdown += `- Supporting: ✓ Match\n`;
+                    } else {
+                        markdown += `- Supporting: ❌ Different\n`;
+                        markdown += `  - Original: ${Array.isArray(originalExpectedEffects.supporting) ? 
+                            originalExpectedEffects.supporting.join(', ') : originalExpectedEffects.supporting}\n`;
+                        markdown += `  - Calculated: ${baselineEffects.supporting ? 
+                            (Array.isArray(baselineEffects.supporting) ? 
+                                baselineEffects.supporting.join(', ') : baselineEffects.supporting) 
+                            : 'None'}\n`;
+                    }
+                }
+            }
+        }
         
         // Dominant Effect
         markdown += `### Dominant Effect\n`;
-        const dominantSymbol = componentScores.base && componentScores.base[dominantEffect.id] >= 9.0 ? ' ★' : '';
+        const dominantSymbol = baselineEffects?.dominant === dominantEffect.id ? ' ★' : '';
         markdown += `- ${dominantEffect.name}${dominantSymbol}: ${formatScoreBar(dominantEffect.level)} ${dominantEffect.level.toFixed(1)}/10\n\n`;
         
         // Supporting Effects
         if (supportingEffects && supportingEffects.length > 0) {
             markdown += `### Supporting Effects\n`;
             supportingEffects.forEach(effect => {
-                const supportSymbol = componentScores.base && componentScores.base[effect.id] >= 7.0 ? ' ☆' : '';
+                let supportSymbol = '';
+                
+                if (baselineEffects?.supporting) {
+                    if (Array.isArray(baselineEffects.supporting)) {
+                        supportSymbol = baselineEffects.supporting.includes(effect.id) ? ' ☆' : '';
+                    } else {
+                        supportSymbol = baselineEffects.supporting === effect.id ? ' ☆' : '';
+                    }
+                }
+                
                 markdown += `- ${effect.name}${supportSymbol}: ${formatScoreBar(effect.level)} ${effect.level.toFixed(1)}/10\n`;
             });
             markdown += '\n';
@@ -336,15 +451,15 @@ export class TeaEffectCalculator {
                     const withCompound = (buildUpScores.withCompoundScores || {})[effectId]?.toFixed(1) || "0.0";
                     const final = finalScores[effectId]?.toFixed(1) || "0.0";
                     
-                    const expectedSymbol = (componentScores.base || {})[effectId] >= 9.0 ? " ★" : 
-                                          ((componentScores.base || {})[effectId] >= 7.0 ? " ☆" : "");
+                    const baselineSymbol = baselineEffects?.dominant === effectId ? " ★" : 
+                                         (baselineEffects?.supporting === effectId ? " ☆" : "");
                     
-                    markdown += `| **${effect.name}**${expectedSymbol} | ${baseScore} | ${withProcessing} | ${withGeo} | ${withFlavor} | ${withCompound} | ${withCompound} | ${final} |\n`;
+                    markdown += `| **${effect.name}**${baselineSymbol} | ${baseScore} | ${withProcessing} | ${withGeo} | ${withFlavor} | ${withCompound} | ${withCompound} | ${final} |\n`;
                 });
                 
                 markdown += `\n### Legend\n`;
-                markdown += `- ★ Expected Dominant Effect\n`;
-                markdown += `- ☆ Expected Supporting Effect\n\n`;
+                markdown += `- ★ Baseline Dominant Effect\n`;
+                markdown += `- ☆ Baseline Supporting Effect\n\n`;
             }
         }
 
@@ -388,7 +503,10 @@ export class TeaEffectCalculator {
             supportingEffects: inference.supportingEffects,
             additionalEffects: inference.additionalEffects,
             interactions: inference.interactions,
-            componentScores: inference.componentScores
+            componentScores: inference.componentScores,
+            baselineEffects: inference.baselineEffects,
+            tcmProfile: inference.tcmProfile,
+            originalExpectedEffects: inference.originalExpectedEffects
         };
     }
 }
