@@ -1,0 +1,359 @@
+{
+  "teaReports": [
+    {
+      "name": "Gyokuro",
+      "expected": {
+        "dominant": "soothing",
+        "supporting": "clarifying"
+      },
+      "primary": {
+        "dominant": {
+          "id": "soothing",
+          "score": 4.5
+        },
+        "supporting": {
+          "id": "peaceful",
+          "score": 4.5
+        },
+        "allScores": {
+          "soothing": 4.5,
+          "peaceful": 4.5,
+          "restorative": 1.5,
+          "reflective": 1,
+          "centering": 3.5,
+          "clarifying": 2.5,
+          "renewing": 2,
+          "elevating": 1.5,
+          "balancing": 1,
+          "stabilizing": 2.5
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "peaceful",
+          "score": 10
+        },
+        "supporting": {
+          "id": "soothing",
+          "score": 8.840801886792454
+        },
+        "allScores": {
+          "peaceful": 10,
+          "soothing": 8.840801886792454
+        }
+      }
+    },
+    {
+      "name": "Sencha",
+      "expected": {
+        "dominant": "awakening",
+        "supporting": "balancing"
+      },
+      "primary": {
+        "dominant": {
+          "id": "balancing",
+          "score": 5.5
+        },
+        "supporting": {
+          "id": "soothing",
+          "score": 3
+        },
+        "allScores": {
+          "soothing": 3,
+          "peaceful": 3,
+          "restorative": 1.5,
+          "reflective": 1,
+          "centering": 2.5,
+          "balancing": 5.5,
+          "nurturing": 2,
+          "stabilizing": 1.5,
+          "comforting": 1.5
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "balancing",
+          "score": 10
+        },
+        "supporting": {
+          "id": "soothing",
+          "score": 6.847826086956521
+        },
+        "allScores": {
+          "balancing": 10,
+          "soothing": 6.847826086956521
+        }
+      }
+    },
+    {
+      "name": "Da Hong Pao",
+      "expected": {
+        "dominant": "nurturing",
+        "supporting": "centering"
+      },
+      "primary": {
+        "dominant": {
+          "id": "balancing",
+          "score": 5.5
+        },
+        "supporting": {
+          "id": "nurturing",
+          "score": 3.5
+        },
+        "allScores": {
+          "revitalizing": 3,
+          "awakening": 2.5,
+          "nurturing": 3.5,
+          "elevating": 1,
+          "balancing": 5.5,
+          "stabilizing": 1.5,
+          "comforting": 1.5,
+          "centering": 2,
+          "peaceful": 0.5
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "balancing",
+          "score": 10
+        },
+        "supporting": {
+          "id": "nurturing",
+          "score": 8.289473684210526
+        },
+        "allScores": {
+          "balancing": 10,
+          "nurturing": 8.289473684210526
+        }
+      }
+    },
+    {
+      "name": "Porto Oolong",
+      "expected": {
+        "dominant": "balancing",
+        "supporting": "peaceful"
+      },
+      "primary": {
+        "dominant": {
+          "id": "balancing",
+          "score": 7
+        },
+        "supporting": {
+          "id": "clarifying",
+          "score": 2.5
+        },
+        "allScores": {
+          "balancing": 7,
+          "centering": 2,
+          "stabilizing": 0.5,
+          "clarifying": 2.5,
+          "reflective": 2,
+          "soothing": 0.5,
+          "peaceful": 0.5
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "balancing",
+          "score": 10
+        },
+        "supporting": {
+          "id": "none",
+          "score": 0
+        },
+        "allScores": {
+          "balancing": 10
+        }
+      }
+    },
+    {
+      "name": "Ali Shan Oolong",
+      "expected": {
+        "dominant": "elevating",
+        "supporting": "peaceful"
+      },
+      "primary": {
+        "dominant": {
+          "id": "balancing",
+          "score": 4
+        },
+        "supporting": {
+          "id": "soothing",
+          "score": 3.5
+        },
+        "allScores": {
+          "soothing": 3.5,
+          "peaceful": 3,
+          "restorative": 1.5,
+          "reflective": 3,
+          "centering": 1.5,
+          "clarifying": 2.5,
+          "balancing": 4
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "balancing",
+          "score": 10.3
+        },
+        "supporting": {
+          "id": "soothing",
+          "score": 10
+        },
+        "allScores": {
+          "balancing": 10.3,
+          "soothing": 10,
+          "peaceful": 4.401659751037344
+        }
+      }
+    },
+    {
+      "name": "Assam",
+      "expected": {
+        "dominant": "revitalizing",
+        "supporting": "awakening"
+      },
+      "primary": {
+        "dominant": {
+          "id": "awakening",
+          "score": 5
+        },
+        "supporting": {
+          "id": "revitalizing",
+          "score": 4.5
+        },
+        "allScores": {
+          "revitalizing": 4.5,
+          "awakening": 5,
+          "nurturing": 3.5,
+          "elevating": 4,
+          "balancing": 2.5,
+          "stabilizing": 1.5,
+          "comforting": 1.5,
+          "centering": 1,
+          "clarifying": 1
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "awakening",
+          "score": 10
+        },
+        "supporting": {
+          "id": "revitalizing",
+          "score": 9.5
+        },
+        "allScores": {
+          "awakening": 10,
+          "revitalizing": 9.5
+        }
+      }
+    },
+    {
+      "name": "Silver Needle",
+      "expected": {
+        "dominant": "peaceful",
+        "supporting": "soothing"
+      },
+      "primary": {
+        "dominant": {
+          "id": "elevating",
+          "score": 4.5
+        },
+        "supporting": {
+          "id": "clarifying",
+          "score": 3.5
+        },
+        "allScores": {
+          "soothing": 3,
+          "peaceful": 2.5,
+          "restorative": 1.5,
+          "reflective": 1,
+          "centering": 0.5,
+          "clarifying": 3.5,
+          "renewing": 2,
+          "elevating": 4.5,
+          "balancing": 1,
+          "awakening": 2.5,
+          "revitalizing": 1.5
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "elevating",
+          "score": 10
+        },
+        "supporting": {
+          "id": "peaceful",
+          "score": 9.5
+        },
+        "allScores": {
+          "elevating": 10,
+          "clarifying": 7.894736842105262,
+          "peaceful": 9.5,
+          "soothing": 8.643157894736841
+        }
+      }
+    },
+    {
+      "name": "Aged Ripe Puerh",
+      "expected": {
+        "dominant": "centering",
+        "supporting": "stabilizing"
+      },
+      "primary": {
+        "dominant": {
+          "id": "balancing",
+          "score": 4
+        },
+        "supporting": {
+          "id": "centering",
+          "score": 4
+        },
+        "allScores": {
+          "balancing": 4,
+          "centering": 4,
+          "stabilizing": 3,
+          "clarifying": 2.5,
+          "reflective": 2,
+          "soothing": 2,
+          "peaceful": 2
+        }
+      },
+      "final": {
+        "dominant": {
+          "id": "balancing",
+          "score": 10
+        },
+        "supporting": {
+          "id": "centering",
+          "score": 8.289473684210526
+        },
+        "allScores": {
+          "balancing": 10,
+          "centering": 8.289473684210526
+        }
+      }
+    }
+  ],
+  "summary": {
+    "totalTeas": 8,
+    "primaryEffects": {
+      "dominantMatches": 2,
+      "supportingMatches": 0,
+      "bothMatches": 0,
+      "dominantMatchRate": "25.0",
+      "supportingMatchRate": "0.0",
+      "bothMatchRate": "0.0"
+    },
+    "finalEffects": {
+      "dominantMatches": 1,
+      "supportingMatches": 0,
+      "bothMatches": 0,
+      "dominantMatchRate": "12.5",
+      "supportingMatchRate": "0.0",
+      "bothMatchRate": "0.0"
+    }
+  },
+  "generatedAt": "2025-04-06T08:48:00.488Z"
+}

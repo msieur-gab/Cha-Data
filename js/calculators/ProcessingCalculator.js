@@ -7,6 +7,44 @@ export class ProcessingCalculator {
   constructor(config, processingInfluences) {
     this.config = config;
     this.processingInfluences = processingInfluences || {};
+    
+    // Define processing intensity modifiers
+    this.processingIntensityModifiers = {
+      // Steaming intensity
+      'steamed': {
+          'light': 0.7,
+          'standard': 1.0,
+          'deep': 1.3
+      },
+      // Roasting intensity
+      'roasted': {
+          'light': 0.7,
+          'medium': 1.0,
+          'heavy': 1.5,
+          'charcoal': 1.8
+      },
+      // Oxidation intensity
+      'oxidation': {
+          'light': 0.7,
+          'medium': 1.0,
+          'heavy': 1.3,
+          'full': 1.5
+      },
+      // Fermentation intensity
+      'fermented': {
+          'light': 0.7,
+          'medium': 1.0,
+          'heavy': 1.4,
+          'post-fermented': 1.6
+      },
+      // Aging intensity
+      'aged': {
+          'short': 0.7,  // < 3 years
+          'medium': 1.0, // 3-7 years
+          'long': 1.3,   // 7-15 years
+          'vintage': 1.6 // > 15 years
+      }
+    };
   }
   
   // Main calculate method following standardized calculator pattern
@@ -165,78 +203,152 @@ export class ProcessingCalculator {
   
   // Calculate the influence of processing methods on tea effects
   calculateProcessingInfluence(processingMethods) {
-    if (!Array.isArray(processingMethods) || !this.processingInfluences) {
+    if (!Array.isArray(processingMethods) || processingMethods.length === 0) {
       return {};
     }
     
-    // Initialize scores with zeros
     const scores = {};
     
-    // Track effect occurrences for diminishing returns
-    const effectOccurrences = {};
-    
-    // Track category occurrences for category-based diminishing returns
-    const categoryOccurrences = {};
-    
-    // Process each method in the processing methods
-    processingMethods.forEach(method => {
-      const normalizedMethod = normalizeString(method);
-      
-      // Find exact or partial match
-      let matchedInfluence = this.processingInfluences[normalizedMethod];
-      let matchedMethod = normalizedMethod;
-      
-      if (!matchedInfluence) {
-        // Try to find partial match
-        for (const [mappedMethod, influence] of Object.entries(this.processingInfluences)) {
-          if (normalizedMethod.includes(mappedMethod) || mappedMethod.includes(normalizedMethod)) {
-            matchedInfluence = influence;
-            matchedMethod = mappedMethod;
-            break;
-          }
+    // If we have pre-defined processing influences, use those
+    if (this.processingInfluences && typeof this.processingInfluences === 'object') {
+      // For each processing method
+      processingMethods.forEach(method => {
+        // Extract base method and intensity if specified
+        const [baseMethod, intensity] = this.parseProcessingMethod(method);
+        
+        // Find the influence for this method
+        const influence = this.processingInfluences[baseMethod];
+        
+        if (influence) {
+          // Get intensity modifier if available, otherwise use 1.0
+          const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
+          
+          // Apply the influence with intensity scaling
+          Object.keys(influence).forEach(effect => {
+            scores[effect] = (scores[effect] || 0) + (influence[effect] * intensityModifier);
+          });
         }
-      }
-      
-      // Apply effects if influence found
-      if (matchedInfluence && matchedInfluence.effects) {
-        // Track category occurrences for diminishing returns
-        const category = matchedInfluence.category || 'general';
-        categoryOccurrences[category] = (categoryOccurrences[category] || 0) + 1;
-        
-        // Calculate category diminishing factor
-        const categoryFactor = 1 / Math.sqrt(categoryOccurrences[category]);
-        
-        // Apply the intensity factor from the influence
-        const intensityFactor = matchedInfluence.intensity || 1.0;
-        
-        // Process each effect in the influence
-        Object.entries(matchedInfluence.effects).forEach(([effect, strength]) => {
-          // Initialize effect score if needed
-          if (!scores[effect]) {
-            scores[effect] = 0;
-          }
-          
-          // Track effect occurrences for diminishing returns
-          effectOccurrences[effect] = (effectOccurrences[effect] || 0) + 1;
-          
-          // Apply diminishing returns for repeated effects
-          const effectFactor = 1 / Math.sqrt(effectOccurrences[effect]);
-          
-          // Calculate final strength with all factors
-          const finalStrength = strength * intensityFactor * categoryFactor * effectFactor;
-          
-          // Add to the effect score
-          scores[effect] += finalStrength;
-        });
-      }
-    });
+      });
+    } else {
+      // Fallback to simple rules if no predefined influences
+      this.applyDefaultProcessingRules(processingMethods, scores);
+    }
     
-    // Cap scores at 10
+    // Ensure all scores are within valid range
     Object.keys(scores).forEach(key => {
       scores[key] = Math.min(10, Math.max(0, scores[key]));
     });
     
     return scores;
+  }
+  
+  /**
+   * Parse a processing method string to extract base method and intensity
+   * @param {string} method - Processing method (e.g., "light-roast", "heavy-oxidation")
+   * @returns {Array} - [baseMethod, intensity]
+   */
+  parseProcessingMethod(method) {
+    if (!method || typeof method !== 'string') {
+      return ['unknown', null];
+    }
+    
+    const methodLower = method.toLowerCase();
+    
+    // Check for intensity prefixes
+    const intensityPrefixes = ['light-', 'medium-', 'heavy-', 'deep-', 'full-', 'charcoal-', 'post-'];
+    let intensity = null;
+    let baseMethod = methodLower;
+    
+    for (const prefix of intensityPrefixes) {
+      if (methodLower.startsWith(prefix)) {
+        intensity = prefix.slice(0, -1); // Remove trailing hyphen
+        baseMethod = methodLower.substring(prefix.length);
+        break;
+      }
+    }
+    
+    // Special handling for specific methods
+    if (baseMethod === 'roast' || baseMethod === 'roasted') {
+      baseMethod = 'roasted';
+    } else if (baseMethod === 'oxidized' || baseMethod === 'oxidised') {
+      baseMethod = 'oxidation';
+    }
+    
+    return [baseMethod, intensity];
+  }
+  
+  /**
+   * Get the intensity modifier for a processing method
+   * @param {string} baseMethod - Base processing method
+   * @param {string} intensity - Intensity level
+   * @returns {number} - Modifier factor
+   */
+  getIntensityModifier(baseMethod, intensity) {
+    if (!intensity || !this.processingIntensityModifiers[baseMethod]) {
+      return 1.0; // Default modifier
+    }
+    
+    const intensityModifiers = this.processingIntensityModifiers[baseMethod];
+    return intensityModifiers[intensity] || 1.0;
+  }
+  
+  /**
+   * Apply default processing rules when no predefined influences exist
+   * @param {Array} processingMethods - Processing methods
+   * @param {Object} scores - Scores object to modify
+   */
+  applyDefaultProcessingRules(processingMethods, scores) {
+    processingMethods.forEach(method => {
+      const [baseMethod, intensity] = this.parseProcessingMethod(method);
+      const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
+      
+      // Apply default rules based on method
+      switch (baseMethod) {
+        case 'steamed':
+          scores['soothing'] = (scores['soothing'] || 0) + (2.0 * intensityModifier);
+          scores['clarifying'] = (scores['clarifying'] || 0) + (1.5 * intensityModifier);
+          break;
+        case 'roasted':
+          scores['nurturing'] = (scores['nurturing'] || 0) + (2.0 * intensityModifier);
+          scores['comforting'] = (scores['comforting'] || 0) + (1.5 * intensityModifier);
+          break;
+        case 'oxidation':
+          scores['revitalizing'] = (scores['revitalizing'] || 0) + (1.5 * intensityModifier);
+          scores['awakening'] = (scores['awakening'] || 0) + (1.0 * intensityModifier);
+          break;
+        case 'fermented':
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + (2.0 * intensityModifier);
+          scores['centering'] = (scores['centering'] || 0) + (1.5 * intensityModifier);
+          break;
+        case 'aged':
+          scores['centering'] = (scores['centering'] || 0) + (1.5 * intensityModifier);
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + (1.0 * intensityModifier);
+          break;
+        case 'shade-grown':
+          scores['peaceful'] = (scores['peaceful'] || 0) + 2.0;
+          scores['clarifying'] = (scores['clarifying'] || 0) + 1.5;
+          break;
+        case 'pan-fired':
+          scores['revitalizing'] = (scores['revitalizing'] || 0) + 1.5;
+          scores['awakening'] = (scores['awakening'] || 0) + 1.0;
+          break;
+        case 'sun-dried':
+          scores['elevating'] = (scores['elevating'] || 0) + 1.5;
+          scores['renewing'] = (scores['renewing'] || 0) + 1.0;
+          break;
+        case 'compressed':
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + 2.0;
+          scores['centering'] = (scores['centering'] || 0) + 1.0;
+          break;
+        case 'minimal-processing':
+          scores['clarifying'] = (scores['clarifying'] || 0) + 1.5;
+          scores['peaceful'] = (scores['peaceful'] || 0) + 1.0;
+          break;
+        default:
+          // No default effects for unknown methods
+          break;
+      }
+    });
   }
   
   // Calculate the contribution of individual processing methods to a specific effect

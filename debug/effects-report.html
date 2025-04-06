@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tea Effects Report</title>
+    <link rel="stylesheet" href="css/debug-styles.css">
+    <style>
+        #output {
+            white-space: pre;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .stats-panel {
+            background-color: #f1f3f4;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        
+        .stats-label {
+            font-weight: 500;
+            color: #333;
+            min-width: 140px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            transition: width 0.3s ease;
+        }
+        
+        .primary-progress { background-color: #4CAF50; }
+        .final-progress { background-color: #2196F3; }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .actions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <!-- Sidebar -->
+        <aside class="debug-sidebar">
+            <tea-sidebar></tea-sidebar>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="debug-content">
+            <header class="debug-header">
+                <h1 class="debug-title">Tea Effects Comparison Report</h1>
+                <p class="debug-subtitle">Analysis of expected vs. calculated tea effects</p>
+            </header>
+            
+            <div class="actions">
+                <button id="generate-report">Generate Effects Report</button>
+                <button id="download-report">Download Report</button>
+                <button id="export-json">Export as JSON</button>
+            </div>
+            
+            <div class="stats-panel" id="stats-panel" style="display: none;">
+                <h3>Accuracy Summary</h3>
+                <div class="stats-row">
+                    <div class="stats-label">Primary Effects:</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill primary-progress" id="primary-progress" style="width: 0%">0%</div>
+                    </div>
+                    <div class="stats-value" id="primary-value">0/0</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stats-label">Final Effects:</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill final-progress" id="final-progress" style="width: 0%">0%</div>
+                    </div>
+                    <div class="stats-value" id="final-value">0/0</div>
+                </div>
+            </div>
+            
+            <div id="output"></div>
+        </main>
+    </div>
+    
+    <script type="module">
+        import { generateEffectsReport } from './js/effects-report.js';
+        import '../js/utils/helpers.js';
+        import './components/TeaSidebar.js';
+        
+        // DOM elements
+        const outputEl = document.getElementById('output');
+        const statsPanel = document.getElementById('stats-panel');
+        const primaryProgress = document.getElementById('primary-progress');
+        const primaryValue = document.getElementById('primary-value');
+        const finalProgress = document.getElementById('final-progress');
+        const finalValue = document.getElementById('final-value');
+        
+        // Report data
+        let reportData = null;
+        
+        // Handle generate report button
+        document.getElementById('generate-report').addEventListener('click', async () => {
+            outputEl.innerHTML = 'Generating report...';
+            statsPanel.style.display = 'none';
+            
+            try {
+                // Generate the report with progress updates
+                reportData = await generateEffectsReport(updateProgress);
+                
+                // Update the stats panel
+                updateStatsPanel(reportData.summary);
+                
+                // Show final report
+                outputEl.innerHTML = reportData.reportText;
+            } catch (error) {
+                outputEl.innerHTML = `Error generating report:\n${error.message}\n\n${error.stack}`;
+                console.error('Error generating report:', error);
+            }
+        });
+        
+        // Handle download report button
+        document.getElementById('download-report').addEventListener('click', () => {
+            if (!reportData) {
+                alert('Please generate a report first.');
+                return;
+            }
+            
+            const blob = new Blob([reportData.reportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tea-effects-report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Handle export JSON button
+        document.getElementById('export-json').addEventListener('click', () => {
+            if (!reportData) {
+                alert('Please generate a report first.');
+                return;
+            }
+            
+            const dataToExport = {
+                teaReports: reportData.teaReports,
+                summary: reportData.summary,
+                generatedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tea-effects-analysis.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Update progress display
+        function updateProgress(text) {
+            outputEl.innerHTML = text;
+        }
+        
+        // Update the stats panel with summary data
+        function updateStatsPanel(summary) {
+            if (!summary) return;
+            
+            const { totalTeas, primaryEffects, finalEffects } = summary;
+            
+            // Show the stats panel
+            statsPanel.style.display = 'block';
+            
+            // Update primary effects
+            const primaryPct = primaryEffects.bothMatchRate;
+            primaryProgress.style.width = `${primaryPct}%`;
+            primaryProgress.textContent = `${primaryPct}%`;
+            primaryValue.textContent = `${primaryEffects.bothMatches}/${totalTeas}`;
+            
+            // Update final effects
+            const finalPct = finalEffects.bothMatchRate;
+            finalProgress.style.width = `${finalPct}%`;
+            finalProgress.textContent = `${finalPct}%`;
+            finalValue.textContent = `${finalEffects.bothMatches}/${totalTeas}`;
+        }
+    </script>
+</body>
+</html> 

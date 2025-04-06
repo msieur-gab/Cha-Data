@@ -17,6 +17,8 @@ export const mapCompoundRatioAndProcessingToYinYangScore = (tea) => {
   
     // 1. Compound Ratio Influence (Primary Driver)
     const ratio = caffeineLevel > 0 ? lTheanineLevel / caffeineLevel : 10; // High ratio if no caffeine
+    
+    // Refined thresholds and impact factors
     if (ratio > 2.5) score -= 2.5; // Strong Yin
     else if (ratio > 1.8) score -= 1.5; // Yin
     else if (ratio > 1.2) score -= 0.7; // Slightly Yin
@@ -25,17 +27,53 @@ export const mapCompoundRatioAndProcessingToYinYangScore = (tea) => {
     else if (ratio < 1.2) score += 0.7; // Slightly Yang
     // Balanced ratio (1.2-1.8) contributes 0 initially
   
-    // 2. Processing Influence (Assumed reliable)
-    if (processingMethods.includes('heavy-roast') || processingMethods.includes('charcoal-roasted')) score += 1.5;
-    else if (processingMethods.includes('medium-roast')) score += 1.0;
-    else if (processingMethods.includes('light-roast') || processingMethods.includes('pan-fired')) score += 0.5;
+    // 2. Consider absolute compound levels to modify the score
+    const compoundTotal = lTheanineLevel + caffeineLevel;
+    
+    // Higher absolute levels make the score more pronounced
+    if (compoundTotal > 14) {
+        // For high absolute levels, amplify the effect but preserve direction
+        score = score > 0 ? score * 1.2 : score * 1.15;
+    } else if (compoundTotal < 8) {
+        // For low absolute levels, dampen the effect
+        score = score * 0.85;
+    }
   
-    if (processingMethods.includes('steamed') || processingMethods.includes('minimal-processing')) score -= 1.0;
-    if (processingMethods.includes('shade-grown')) score -= 1.0;
-    if (processingMethods.includes('sun-dried')) score += 0.5;
-    if (processingMethods.includes('aged') || processingMethods.includes('fermented')) score += 0.5; // Often balancing/warming
+    // 3. Processing Influence with more nuanced effects
+    // Heavy roasts have stronger yang effect
+    if (processingMethods.includes('heavy-roast') || processingMethods.includes('charcoal-roasted')) {
+        score += 1.5;
+    }
+    else if (processingMethods.includes('medium-roast')) {
+        score += 1.0;
+    }
+    else if (processingMethods.includes('light-roast') || processingMethods.includes('pan-fired')) {
+        score += 0.5;
+    }
   
-    // 3. Clamp the score
+    // Yinning processes have more nuanced effects
+    if (processingMethods.includes('steamed')) {
+        score -= 0.9;
+    }
+    if (processingMethods.includes('minimal-processing')) {
+        score -= 1.1;
+    }
+    if (processingMethods.includes('shade-grown')) {
+        score -= 1.2;
+    }
+    
+    // Other processes with refined values
+    if (processingMethods.includes('sun-dried')) {
+        score += 0.6;
+    }
+    if (processingMethods.includes('aged')) {
+        score += 0.4;
+    }
+    if (processingMethods.includes('fermented')) {
+        score += 0.6;
+    }
+  
+    // 4. Clamp the score
     return Math.max(-3.5, Math.min(3.5, score));
 };
   
@@ -186,30 +224,30 @@ export const mapCompoundsAndProcessingToQiMovementScores = (tea) => {
 export const tcmToPrimaryEffectMap = {
     // Yin/Yang Nature -> Primary Effects
     Yin: [
-        ['soothing', 3.0], ['peaceful', 2.5], ['restorative', 1.5], 
-        ['reflective', 1.0], ['centering', 0.5]
+        ['soothing', 2.8], ['peaceful', 2.3], ['restorative', 1.7], 
+        ['reflective', 1.2], ['centering', 0.7]
     ],
     Yang: [
-        ['revitalizing', 3.0], ['awakening', 2.5], ['nurturing', 1.5], 
-        ['elevating', 1.0]
+        ['revitalizing', 2.8], ['awakening', 2.3], ['nurturing', 1.7], 
+        ['elevating', 1.2]
     ],
     Balanced: [
-        ['balancing', 3.0], ['centering', 1.0], ['stabilizing', 0.5]
+        ['balancing', 2.2], ['centering', 1.4], ['stabilizing', 1.0]
     ],
     
     // Five Elements -> Primary Effects
     wood: [
-        ['clarifying', 2.5], ['renewing', 2.0], ['elevating', 1.5], ['balancing', 1.0]
+        ['clarifying', 2.5], ['renewing', 2.0], ['elevating', 1.5], ['balancing', 0.8]
     ],
     fire: [
         ['revitalizing', 2.5], ['elevating', 2.0], ['awakening', 1.5], ['nurturing', 1.0]
     ],
     earth: [
-        ['balancing', 2.5], ['nurturing', 2.0], ['stabilizing', 1.5], 
-        ['comforting', 1.5], ['centering', 1.0]
+        ['balancing', 2.2], ['nurturing', 2.0], ['stabilizing', 1.5], 
+        ['comforting', 1.5], ['centering', 1.2]
     ],
     metal: [
-        ['clarifying', 2.5], ['reflective', 2.0], ['balancing', 1.0], ['soothing', 0.5]
+        ['clarifying', 2.5], ['reflective', 2.0], ['balancing', 0.8], ['soothing', 0.8]
     ],
     water: [
         ['centering', 2.5], ['stabilizing', 2.0], ['reflective', 1.5], 
@@ -221,16 +259,16 @@ export const tcmToPrimaryEffectMap = {
         ['elevating', 3.0], ['awakening', 2.5], ['revitalizing', 1.5], ['clarifying', 1.0]
     ],
     descending: [
-        ['centering', 3.0], ['stabilizing', 2.5], ['peaceful', 2.0], ['soothing', 1.5]
+        ['centering', 2.8], ['stabilizing', 2.5], ['peaceful', 2.0], ['soothing', 1.5]
     ],
     expanding: [
-        ['revitalizing', 2.0], ['elevating', 1.5], ['awakening', 1.0], ['renewing', 1.0]
+        ['revitalizing', 2.2], ['elevating', 1.7], ['awakening', 1.0], ['renewing', 1.2]
     ],
     contracting: [
-        ['clarifying', 2.0], ['reflective', 2.0], ['centering', 1.5], ['stabilizing', 0.5]
+        ['clarifying', 2.0], ['reflective', 2.0], ['centering', 1.5], ['stabilizing', 0.8]
     ],
     balancedQi: [
-        ['balancing', 3.0], ['centering', 1.0], ['peaceful', 0.5]
+        ['balancing', 2.2], ['centering', 1.4], ['peaceful', 1.0]
     ]
 };
 

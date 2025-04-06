@@ -159,11 +159,11 @@ export class TeaEffectCalculator {
         
         // Get component weights
         const weights = {
-            base: this.config.get('componentWeights.base') || 0.4,
+            base: this.config.get('componentWeights.base') || 0.35,
             compounds: this.config.get('componentWeights.compounds') || 0.18,
             flavors: this.config.get('componentWeights.flavors') || 0.12,
-            processing: this.config.get('componentWeights.processing') || 0.18,
-            geography: this.config.get('componentWeights.geography') || 0.12
+            processing: this.config.get('componentWeights.processing') || 0.20,
+            geography: this.config.get('componentWeights.geography') || 0.15
         };
 
         // Get all unique effect IDs from all component calculations

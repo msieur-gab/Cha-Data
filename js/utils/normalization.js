@@ -131,6 +131,19 @@ export function normalizeScores(scores) {
         return scores;
     }
 
+    // Handle balancing effect if present
+    if (scores['balancing']) {
+        // Find the top non-balancing effect score to use as a reference
+        const dominantNonBalancingScore = Object.entries(scores)
+            .filter(([effect]) => effect !== 'balancing')
+            .sort(([, a], [, b]) => b - a)[0]?.[1] || 0;
+        
+        // If balancing is much higher than other effects, reduce it
+        if (scores['balancing'] > dominantNonBalancingScore * 1.3) {
+            scores['balancing'] = dominantNonBalancingScore * 1.2;
+        }
+    }
+
     // Normalize all scores to 0-10 scale
     const normalized = {};
     Object.entries(scores).forEach(([effect, score]) => {
@@ -161,6 +174,26 @@ export function enhanceDominantEffect(scores) {
     if (sortedEffects.length > 0) {
         // Get the ID of the dominant effect
         const [dominantId, dominantScore] = sortedEffects[0];
+        
+        // Special handling if balancing is the dominant effect
+        if (dominantId === 'balancing' && sortedEffects.length > 1) {
+            const [secondId, secondScore] = sortedEffects[1];
+            
+            // If balancing is only slightly higher than the second effect,
+            // make the second effect dominant instead
+            if (dominantScore - secondScore < 0.8) {
+                enhancedScores[secondId] = Math.min(10, secondScore * 1.15);
+                enhancedScores[dominantId] = secondScore * 0.95;
+                
+                // Enhance the supporting effect (third one now)
+                if (sortedEffects.length > 2) {
+                    const [thirdId, thirdScore] = sortedEffects[2];
+                    enhancedScores[thirdId] = Math.min(10, thirdScore * 1.05);
+                }
+                
+                return enhancedScores;
+            }
+        }
         
         // Enhance the dominant effect (increase by 15% instead of 10%)
         enhancedScores[dominantId] = Math.min(10, dominantScore * 1.15);

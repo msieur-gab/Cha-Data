@@ -145,6 +145,101 @@ export class GeographyCalculator {
                 climate: 'tropical-highland' 
             }
         };
+
+        // Define elevation impact scaling
+        this.elevationImpactScaling = {
+            'high-mountain': { // > 1800m
+                'clarifying': 1.5,
+                'elevating': 1.3,
+                'peaceful': 1.2,
+                'reflective': 1.1
+            },
+            'mountain': { // 1000-1800m
+                'refreshing': 1.2,
+                'balancing': 1.1,
+                'clarifying': 1.1,
+                'elevating': 1.1
+            },
+            'mid-altitude': { // 500-1000m
+                'balancing': 1.2,
+                'nurturing': 1.1,
+                'revitalizing': 1.0
+            },
+            'lowland': { // < 500m
+                'grounding': 1.3,
+                'nurturing': 1.2,
+                'stabilizing': 1.1,
+                'comforting': 1.1
+            }
+        };
+        
+        // Define climate impact scaling
+        this.climateImpactScaling = {
+            'tropical': {
+                'revitalizing': 1.3,
+                'awakening': 1.2,
+                'nurturing': 1.1
+            },
+            'subtropical': {
+                'elevating': 1.2,
+                'nurturing': 1.1,
+                'revitalizing': 1.1
+            },
+            'temperate': {
+                'balancing': 1.2,
+                'soothing': 1.1,
+                'reflective': 1.0
+            },
+            'highland': {
+                'clarifying': 1.3,
+                'peaceful': 1.2,
+                'reflective': 1.1
+            },
+            'humid': {
+                'nurturing': 1.2,
+                'stabilizing': 1.1,
+                'comforting': 1.0
+            },
+            'dry': {
+                'clarifying': 1.2,
+                'reflective': 1.1,
+                'balancing': 1.0
+            }
+        };
+        
+        // Define geographic features impact
+        this.featureImpactScaling = {
+            'mountain': {
+                'elevating': 1.2,
+                'peaceful': 1.1,
+                'clarifying': 1.1
+            },
+            'valley': {
+                'nurturing': 1.2,
+                'stabilizing': 1.1,
+                'balancing': 1.0
+            },
+            'forest': {
+                'peaceful': 1.3,
+                'restorative': 1.2,
+                'stabilizing': 1.1
+            },
+            'river': {
+                'balancing': 1.2,
+                'renewing': 1.1,
+                'soothing': 1.0
+            },
+            'coastal': {
+                'refreshing': 1.3,
+                'revitalizing': 1.1,
+                'clarifying': 1.0
+            },
+            'island': {
+                'peaceful': 1.2,
+                'balancing': 1.1,
+                'revitalizing': 1.0
+            }
+        };
     }
     
     // Main API method following standardized calculator pattern

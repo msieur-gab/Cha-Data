@@ -11,10 +11,11 @@ export const defaultConfig = {
   
   // Component weights for different aspects of tea analysis
   componentWeights: {
-    compounds: 0.4,    // L-theanine and caffeine have strong influence
-    flavors: 0.25,     // Flavor profile has moderate influence
-    processing: 0.25,  // Processing methods have moderate influence
-    geography: 0.1     // Geography has subtle influence
+    base: 0.35,         // Reduced base weight
+    compounds: 0.18,    // Compound properties
+    processing: 0.20,   // Increased processing influence
+    geography: 0.15,    // Increased geography influence
+    flavors: 0.12      // Flavor profile
   },
   
   // Thresholds for compound ratio analysis
