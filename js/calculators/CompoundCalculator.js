@@ -9,6 +9,113 @@ export class CompoundCalculator {
     this.primaryEffects = primaryEffects;
   }
   
+  // Main calculate method following standardized calculator pattern
+  calculate(tea) {
+    const inference = this.infer(tea);
+    return {
+      inference: this.formatInference(inference),
+      data: this.serialize(inference)
+    };
+  }
+  
+  // Core inference method
+  infer(tea) {
+    tea = validateObject(tea);
+    
+    // Get compound levels
+    const levels = this.calculateCompoundLevels(tea);
+    
+    // Calculate effects based on compounds
+    const effects = this.calculateCompoundEffects(tea);
+    
+    // Get compound analysis
+    const analysis = this.getCompoundAnalysis(tea);
+    
+    return {
+      levels,
+      effects,
+      analysis
+    };
+  }
+  
+  // Format inference as markdown
+  formatInference(inference) {
+    const { levels, effects, analysis } = inference;
+    
+    let md = `## L-Theanine & Caffeine Analysis\n\n`;
+    
+    // Add basic ratio information
+    md += `### Compound Ratio\n`;
+    md += `- L-Theanine Level: ${analysis.lTheanineLevel}/10\n`;
+    md += `- Caffeine Level: ${analysis.caffeineLevel}/10\n`;
+    md += `- Ratio: ${analysis.ratio}:1\n\n`;
+    
+    // Add interpretation
+    md += `### Interpretation\n`;
+    md += `${analysis.description}\n\n`;
+    
+    // Add categorization
+    md += `### Compound Balance\n`;
+    md += `Primary Influence: ${analysis.primaryInfluence}\n\n`;
+    
+    // Formatting function for boolean properties
+    const formatBool = (value) => value ? "Yes" : "No";
+    
+    // Add detailed compound level information
+    md += `### Detailed Analysis\n`;
+    md += `- High L-Theanine: ${formatBool(levels.highLTheanine)}\n`;
+    md += `- Moderate L-Theanine: ${formatBool(levels.moderateLTheanine)}\n`;
+    md += `- Low L-Theanine: ${formatBool(levels.lowLTheanine)}\n`;
+    md += `- High Caffeine: ${formatBool(levels.highCaffeine)}\n`;
+    md += `- Moderate Caffeine: ${formatBool(levels.moderateCaffeine)}\n`;
+    md += `- Low Caffeine: ${formatBool(levels.lowCaffeine)}\n`;
+    md += `- Balanced Ratio: ${formatBool(levels.balancedRatio)}\n`;
+    md += `- Extreme Ratio: ${formatBool(levels.extremeRatio)}\n`;
+    md += `- Very Low Ratio: ${formatBool(levels.veryLowRatio)}\n`;
+    md += `- Low Ratio: ${formatBool(levels.lowRatio)}\n`;
+    md += `- Is Balanced: ${formatBool(levels.balanced)}\n`;
+    md += `- Is Disharmonious: ${formatBool(levels.disharmonious)}\n`;
+    md += `- Is Extreme Tea: ${formatBool(levels.extremeTea)}\n\n`;
+    
+    // Add effect scores
+    md += `### Compound Effects\n`;
+    
+    Object.entries(effects)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .forEach(([effect, score]) => {
+        const barLength = Math.round(score);
+        const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
+        md += `${effect.padEnd(15)} ${bar} ${score.toFixed(1)}\n`;
+      });
+      
+    return md;
+  }
+  
+  // Serialize inference to structured data
+  serialize(inference) {
+    const { levels, effects, analysis } = inference;
+    
+    return {
+      lTheanine: analysis.lTheanineLevel,
+      caffeine: analysis.caffeineLevel,
+      ratio: parseFloat(analysis.ratio),
+      balance: {
+        primaryInfluence: analysis.primaryInfluence,
+        isBalanced: levels.balanced,
+        isExtreme: levels.extremeTea,
+        isDominant: analysis.primaryInfluence !== 'balanced'
+      },
+      levels: {
+        lTheanine: levels.highLTheanine ? 'high' : (levels.moderateLTheanine ? 'moderate' : 'low'),
+        caffeine: levels.highCaffeine ? 'high' : (levels.moderateCaffeine ? 'moderate' : 'low'),
+        ratio: levels.extremeRatio ? 'extreme high' : (levels.veryLowRatio ? 'very low' : (levels.lowRatio ? 'low' : 'balanced'))
+      },
+      effects: effects,
+      description: analysis.description
+    };
+  }
+  
   // Calculate compound levels with enhanced ratio handling
   calculateCompoundLevels(tea) {
     tea = validateObject(tea);
@@ -56,8 +163,18 @@ export class CompoundCalculator {
     
     // Create initial scores object with all effects set to 0
     const scores = {};
-    for (const effect of this.primaryEffects) {
-      scores[effect.id] = 0;
+    
+    // If primaryEffects is an array of effect objects
+    if (Array.isArray(this.primaryEffects)) {
+      this.primaryEffects.forEach(effect => {
+        scores[effect.id] = 0;
+      });
+    } 
+    // If primaryEffects is an object keyed by effect ID
+    else if (typeof this.primaryEffects === 'object') {
+      Object.keys(this.primaryEffects).forEach(effectId => {
+        scores[effectId] = 0;
+      });
     }
   
     const levels = this.calculateCompoundLevels(tea);
@@ -70,71 +187,166 @@ export class CompoundCalculator {
     const penaltyBalancingExtremeTeas = 0.7; // Penalty for extreme teas claiming to be balanced
     
     // Calculate base scores with compounds
-    for (const effect of this.primaryEffects) {
-      let score = 0;
-      let balancingModifier = 1.0;
-      
-      // Apply different adjustment for balancing effect
-      if (effect.id === 'balancing') {
-        // Penalize balancing if not truly balanced
-        if (!levels.balanced) {
-          balancingModifier = penaltyHarmonizingUnbalanced;
+    
+    // If primaryEffects is an array of effect objects
+    if (Array.isArray(this.primaryEffects)) {
+      for (const effect of this.primaryEffects) {
+        let score = 0;
+        let balancingModifier = 1.0;
+        
+        // Apply different adjustment for balancing effect
+        if (effect.id === 'balancing') {
+          // Penalize balancing if not truly balanced
+          if (!levels.balanced) {
+            balancingModifier = penaltyHarmonizingUnbalanced;
+          }
+          
+          // Apply stronger penalty for extreme teas
+          if (levels.extremeTea) {
+            balancingModifier *= penaltyBalancingExtremeTeas;
+          }
         }
         
-        // Apply stronger penalty for extreme teas
-        if (levels.extremeTea) {
-          balancingModifier *= penaltyBalancingExtremeTeas;
-        }
-      }
-
-      // Calculate score from triggers
-      if (effect.triggers) {
-        Object.entries(effect.triggers).forEach(([trigger, weight]) => {
-          if (levels[trigger]) {
-            score += weight * balancingModifier;
-
-            // Apply penalties for disharmonious ratios
-            if (levels.disharmonious) {
-              if (['balancing', 'clarifying'].includes(effect.id)) {
-                score *= penaltyDisharmoniousGeneral;
-              }
-              if (['peaceful', 'soothing'].includes(effect.id) && levels.extremeRatio) {
-                score *= penaltyDisharmoniousExtreme;
-              }
-              if (['revitalizing', 'awakening'].includes(effect.id) && levels.veryLowRatio) {
-                score *= penaltyExtremelyLowRatio; 
+        // Calculate score from triggers if available
+        if (effect.triggers) {
+          Object.entries(effect.triggers).forEach(([trigger, weight]) => {
+            if (levels[trigger]) {
+              score += weight * balancingModifier;
+              
+              // Apply penalties for disharmonious ratios
+              if (levels.disharmonious) {
+                if (['balancing', 'clarifying'].includes(effect.id)) {
+                  score *= penaltyDisharmoniousGeneral;
+                }
+                if (['peaceful', 'soothing'].includes(effect.id) && levels.extremeRatio) {
+                  score *= penaltyDisharmoniousExtreme;
+                }
+                if (['revitalizing', 'awakening'].includes(effect.id) && levels.veryLowRatio) {
+                  score *= penaltyExtremelyLowRatio; 
+                }
               }
             }
-          }
-        });
-      }
-      
-      // Add factor to boost effect based on direct L-theanine and caffeine levels
-      if (['soothing', 'peaceful', 'clarifying'].includes(effect.id)) {
-        score += (tea.lTheanineLevel / 10) * 1.8;
-      }
-      
-      if (['revitalizing', 'awakening', 'nurturing'].includes(effect.id)) {
-        score += (tea.caffeineLevel / 10) * 1.8;
-      }
-      
-      // Modified balancing effect calculation from compound balance
-      if (effect.id === 'balancing' && tea.lTheanineLevel >= 4 && tea.caffeineLevel >= 3) {
-        // Calculate the balance value but with more penalties for imbalance
-        const difference = Math.abs(tea.lTheanineLevel - tea.caffeineLevel);
-        
-        // Only boost substantially if truly in balance
-        if (difference <= 1.5) {
-          const balance = 10 - (difference * 2); // More severe penalty for difference
-          score += (balance / 10) * 1.5;
-        } else {
-          // Much smaller boost for larger differences
-          score += 0.3; 
+          });
         }
+        
+        // Add factor to boost effect based on direct L-theanine and caffeine levels
+        if (['soothing', 'peaceful', 'clarifying'].includes(effect.id)) {
+          score += (tea.lTheanineLevel / 10) * 1.8;
+        }
+        
+        if (['revitalizing', 'awakening', 'nurturing'].includes(effect.id)) {
+          score += (tea.caffeineLevel / 10) * 1.8;
+        }
+        
+        // Modified balancing effect calculation from compound balance
+        if (effect.id === 'balancing' && tea.lTheanineLevel >= 4 && tea.caffeineLevel >= 3) {
+          // Calculate the balance value but with more penalties for imbalance
+          const difference = Math.abs(tea.lTheanineLevel - tea.caffeineLevel);
+          
+          // Only boost substantially if truly in balance
+          if (difference <= 1.5) {
+            const balance = 10 - (difference * 2); // More severe penalty for difference
+            score += (balance / 10) * 1.5;
+          } else {
+            // Much smaller boost for larger differences
+            score += 0.3; 
+          }
+        }
+        
+        scores[effect.id] = score;
+      }
+    }
+    // If primaryEffects is an object keyed by effect ID
+    else if (typeof this.primaryEffects === 'object') {
+      Object.entries(this.primaryEffects).forEach(([effectId, effectData]) => {
+        let score = 0;
+        let balancingModifier = 1.0;
+        
+        // Apply different adjustment for balancing effect
+        if (effectId === 'balancing') {
+          // Penalize balancing if not truly balanced
+          if (!levels.balanced) {
+            balancingModifier = penaltyHarmonizingUnbalanced;
+          }
+          
+          // Apply stronger penalty for extreme teas
+          if (levels.extremeTea) {
+            balancingModifier *= penaltyBalancingExtremeTeas;
+          }
+        }
+        
+        // Calculate score from triggers if available
+        if (effectData.triggers) {
+          Object.entries(effectData.triggers).forEach(([trigger, weight]) => {
+            if (levels[trigger]) {
+              score += weight * balancingModifier;
+              
+              // Apply penalties for disharmonious ratios
+              if (levels.disharmonious) {
+                if (['balancing', 'clarifying'].includes(effectId)) {
+                  score *= penaltyDisharmoniousGeneral;
+                }
+                if (['peaceful', 'soothing'].includes(effectId) && levels.extremeRatio) {
+                  score *= penaltyDisharmoniousExtreme;
+                }
+                if (['revitalizing', 'awakening'].includes(effectId) && levels.veryLowRatio) {
+                  score *= penaltyExtremelyLowRatio; 
+                }
+              }
+            }
+          });
+        }
+        
+        // Add factor to boost effect based on direct L-theanine and caffeine levels
+        if (['soothing', 'peaceful', 'clarifying'].includes(effectId)) {
+          score += (tea.lTheanineLevel / 10) * 1.8;
+        }
+        
+        if (['revitalizing', 'awakening', 'nurturing'].includes(effectId)) {
+          score += (tea.caffeineLevel / 10) * 1.8;
+        }
+        
+        // Modified balancing effect calculation from compound balance
+        if (effectId === 'balancing' && tea.lTheanineLevel >= 4 && tea.caffeineLevel >= 3) {
+          // Calculate the balance value but with more penalties for imbalance
+          const difference = Math.abs(tea.lTheanineLevel - tea.caffeineLevel);
+          
+          // Only boost substantially if truly in balance
+          if (difference <= 1.5) {
+            const balance = 10 - (difference * 2); // More severe penalty for difference
+            score += (balance / 10) * 1.5;
+          } else {
+            // Much smaller boost for larger differences
+            score += 0.3; 
+          }
+        }
+        
+        scores[effectId] = score;
+      });
+    }
+    
+    // If no primary effects data is available, provide some basic scores based on ratio
+    if (Object.keys(scores).length === 0) {
+      // Create some minimal effect scores based on ratios
+      if (levels.highLTheanine) {
+        scores.peaceful = (tea.lTheanineLevel / 10) * 5;
+        scores.soothing = (tea.lTheanineLevel / 10) * 4.5;
       }
       
-      scores[effect.id] = score;
+      if (levels.highCaffeine) {
+        scores.revitalizing = (tea.caffeineLevel / 10) * 5;
+        scores.awakening = (tea.caffeineLevel / 10) * 4.5;
+      }
+      
+      if (levels.balanced) {
+        scores.balancing = Math.min(tea.lTheanineLevel, tea.caffeineLevel) / 10 * 5;
+      }
     }
+    
+    // Cap all scores to 10
+    Object.keys(scores).forEach(key => {
+      scores[key] = Math.min(10, Math.max(0, scores[key]));
+    });
     
     return scores;
   }
@@ -181,4 +393,4 @@ export class CompoundCalculator {
   }
 }
 
-export default CompoundCalculator; 
+export default CompoundCalculator;

@@ -1,52 +1,25 @@
 // FlavorCalculator.js
 // Handles calculations related to flavor influence on tea effects
 
+import { validateObject, sortByProperty, getTopItems } from '../utils/helpers.js';
+
 export class FlavorCalculator {
   constructor(config, flavorInfluences) {
     this.config = config;
     this.flavorInfluences = flavorInfluences || {};
   }
   
-  // Main calculate method following our pattern
+  // Main calculate method following our standardized pattern
   calculate(tea) {
-    console.log('=== FlavorCalculator.calculate ===');
-    console.log('Input tea:', {
-      hasFlavorProfile: !!tea?.flavorProfile,
-      flavorProfile: tea?.flavorProfile || []
-    });
-    
     const inference = this.infer(tea);
-    console.log('Inference:', {
-      hasDescription: !!inference?.description,
-      dominantFlavors: inference?.dominantFlavors || [],
-      flavorCount: inference?.flavorCount || 0,
-      categoryCount: inference?.flavorCategories?.length || 0,
-      contributionCount: inference?.contributions?.length || 0
-    });
-    
-    const formattedInference = this.formatInference(inference);
-    const serializedData = this.serialize(inference);
-    
-    console.log('Serialized data:', {
-      hasProfile: !!serializedData?.flavor?.profile,
-      hasCategories: !!serializedData?.flavor?.categories?.length,
-      hasContributions: !!serializedData?.flavor?.contributions?.length
-    });
-    
     return {
-      inference: formattedInference,
-      data: serializedData
+      inference: this.formatInference(inference),
+      data: this.serialize(inference)
     };
   }
 
   // Infer flavor analysis
   infer(tea) {
-    console.log('=== FlavorCalculator.infer ===');
-    console.log('Input tea:', {
-      hasFlavorProfile: !!tea?.flavorProfile,
-      flavorProfile: tea?.flavorProfile || []
-    });
-    
     if (!tea || !tea.flavorProfile) {
       return {
         description: 'No flavor profile available',
@@ -59,14 +32,7 @@ export class FlavorCalculator {
     }
 
     const flavorAnalysis = this.getFlavorAnalysis(tea);
-    console.log('Flavor Analysis:', {
-      description: flavorAnalysis.description,
-      dominantFlavors: flavorAnalysis.dominantFlavors,
-      categories: flavorAnalysis.flavorCategories
-    });
-    
     const flavorInfluence = this.calculateFlavorInfluence(tea.flavorProfile);
-    console.log('Flavor Influence:', Object.keys(flavorInfluence));
     
     // Get all unique effects from flavor influences
     const allEffects = new Set();
@@ -75,7 +41,6 @@ export class FlavorCalculator {
         subcategory.effects.forEach(effect => allEffects.add(effect));
       });
     });
-    console.log('Found Effects:', Array.from(allEffects));
     
     // Calculate contributions for all effects
     const contributions = Array.from(allEffects).map(effect => {
@@ -89,11 +54,6 @@ export class FlavorCalculator {
       };
     }).filter(({ contributions }) => contributions.length > 0);
     
-    console.log('Contributions:', contributions.map(c => ({
-      effect: c.effect,
-      count: c.contributions.length
-    })));
-    
     return {
       description: flavorAnalysis.description,
       dominantFlavors: flavorAnalysis.dominantFlavors,
@@ -106,8 +66,6 @@ export class FlavorCalculator {
 
   // Format inference as markdown
   formatInference(inference) {
-    console.log('Formatting inference:', inference);
-    
     if (!inference) {
       return '## Flavor Analysis\n\nNo flavor data available.';
     }
@@ -152,19 +110,11 @@ export class FlavorCalculator {
       });
     }
     
-    console.log('Formatted markdown:', md);
     return md;
   }
 
   // Serialize inference for JSON export
   serialize(inference) {
-    console.log('=== FlavorCalculator.serialize ===');
-    console.log('Input inference:', {
-      hasDescription: !!inference?.description,
-      hasContributions: !!inference?.contributions?.length,
-      contributionCount: inference?.contributions?.length || 0
-    });
-    
     if (!inference) {
       return {
         flavor: {
@@ -201,7 +151,7 @@ export class FlavorCalculator {
       }))
     }));
 
-    const result = {
+    return {
       flavor: {
         profile,
         categories,
@@ -209,17 +159,6 @@ export class FlavorCalculator {
         _sectionRef: "flavor"
       }
     };
-    
-    console.log('Output JSON:', {
-      hasProfile: !!result.flavor.profile,
-      profileKeys: Object.keys(result.flavor.profile),
-      hasCategories: !!result.flavor.categories.length,
-      categoryCount: result.flavor.categories.length,
-      hasContributions: !!result.flavor.contributions.length,
-      contributionCount: result.flavor.contributions.length
-    });
-    
-    return result;
   }
   
   // Calculate the influence of flavors on tea effects
@@ -282,7 +221,7 @@ export class FlavorCalculator {
     });
     
     // Sort by contribution strength (descending)
-    return contributions.sort((a, b) => b.contribution - a.contribution);
+    return sortByProperty(contributions, 'contribution');
   }
   
   // Get dominant flavors from flavor profile
@@ -305,8 +244,7 @@ export class FlavorCalculator {
     });
     
     // Sort by score and take top flavors
-    return flavorScores
-      .sort((a, b) => b.score - a.score)
+    return sortByProperty(flavorScores, 'score')
       .slice(0, limit)
       .map(item => item.flavor);
   }
@@ -336,12 +274,9 @@ export class FlavorCalculator {
       });
       
       if (count > 0) {
-        flavorCategories.push({ category, count });
+        flavorCategories.push(category);
       }
     });
-    
-    // Sort categories by count (descending)
-    flavorCategories.sort((a, b) => b.count - a.count);
     
     // Generate a natural language description
     let description;
@@ -350,12 +285,12 @@ export class FlavorCalculator {
     } else if (flavorCategories.length === 0) {
       description = `This tea has ${flavorCount} flavors in its profile.`;
     } else {
-      const primaryCategory = flavorCategories[0].category;
+      const primaryCategory = flavorCategories[0];
       
       if (flavorCategories.length === 1) {
         description = `This tea has a predominantly ${primaryCategory} flavor profile.`;
       } else {
-        const secondaryCategory = flavorCategories[1].category;
+        const secondaryCategory = flavorCategories[1];
         description = `This tea has a ${primaryCategory} profile with ${secondaryCategory} notes.`;
       }
     }
@@ -364,9 +299,9 @@ export class FlavorCalculator {
       description,
       dominantFlavors,
       flavorCount,
-      flavorCategories: flavorCategories.map(c => c.category)
+      flavorCategories
     };
   }
 }
 
-export default FlavorCalculator; 
+export default FlavorCalculator;

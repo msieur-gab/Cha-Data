@@ -141,33 +141,52 @@ export function normalizeScores(scores) {
 }
 
 /**
- * Enhances the dominant effect to ensure it stands out
- * @param {Object} scores - Normalized effect scores
- * @returns {Object} Scores with enhanced dominant effect
+ * Enhance the dominant effect to make it stand out more clearly
+ * @param {Object} scores - Effect scores object
+ * @returns {Object} - Enhanced effect scores
  */
 export function enhanceDominantEffect(scores) {
-    if (!scores || Object.keys(scores).length === 0) {
-        return {};
-    }
-
-    // Find the highest score
-    const entries = Object.entries(scores);
-    const maxEntry = entries.reduce((max, current) => 
-        current[1] > max[1] ? current : max
-    );
-
-    // If there's no clear dominant effect (all scores similar), return original scores
-    const secondHighest = entries
-        .filter(([effect]) => effect !== maxEntry[0])
-        .reduce((max, current) => current[1] > max[1] ? current : max, ['', 0]);
-
-    if (maxEntry[1] - secondHighest[1] < 1) {
+    if (!scores || typeof scores !== 'object' || Object.keys(scores).length === 0) {
         return scores;
     }
-
-    // Enhance the dominant effect
-    const enhanced = { ...scores };
-    enhanced[maxEntry[0]] = Math.min(10, maxEntry[1] + 1);
-
-    return enhanced;
+    
+    // Create a copy of the scores
+    const enhancedScores = { ...scores };
+    
+    // Sort effects by score
+    const sortedEffects = Object.entries(enhancedScores)
+        .sort(([, scoreA], [, scoreB]) => scoreB - scoreA);
+    
+    // If we have at least one effect
+    if (sortedEffects.length > 0) {
+        // Get the ID of the dominant effect
+        const [dominantId, dominantScore] = sortedEffects[0];
+        
+        // Enhance the dominant effect (increase by 15% instead of 10%)
+        enhancedScores[dominantId] = Math.min(10, dominantScore * 1.15);
+        
+        // If we have supporting effects, enhance them slightly (but less than dominant)
+        if (sortedEffects.length > 1) {
+            const [supportingId, supportingScore] = sortedEffects[1];
+            enhancedScores[supportingId] = Math.min(10, supportingScore * 1.05);
+            
+            // Make sure the supporting effect score doesn't exceed the dominant score
+            if (enhancedScores[supportingId] >= enhancedScores[dominantId]) {
+                enhancedScores[supportingId] = enhancedScores[dominantId] - 0.5;
+            }
+            
+            // If we have a second supporting effect, enhance it very slightly
+            if (sortedEffects.length > 2) {
+                const [supporting2Id, supporting2Score] = sortedEffects[2];
+                enhancedScores[supporting2Id] = Math.min(10, supporting2Score * 1.02);
+                
+                // Make sure the second supporting effect doesn't exceed the first supporting effect
+                if (enhancedScores[supporting2Id] >= enhancedScores[supportingId]) {
+                    enhancedScores[supporting2Id] = enhancedScores[supportingId] - 0.3;
+                }
+            }
+        }
+    }
+    
+    return enhancedScores;
 }

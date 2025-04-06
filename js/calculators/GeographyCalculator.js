@@ -13,7 +13,7 @@ import {
 
 import { validateObject, normalizeString, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
 
-class GeographyCalculator {
+export class GeographyCalculator {
     constructor(config) {
         this.config = config;
         
@@ -144,6 +144,193 @@ class GeographyCalculator {
                 soilType: 'laterite',
                 climate: 'tropical-highland' 
             }
+        };
+    }
+    
+    // Main API method following standardized calculator pattern
+    calculate(tea) {
+        const inference = this.infer(tea);
+        return {
+            inference: this.formatInference(inference),
+            data: this.serialize(inference)
+        };
+    }
+    
+    // Core inferencer - processes geographic data and produces insights
+    infer(tea) {
+        if (!tea) {
+            return {
+                geographicData: null,
+                effects: {},
+                region: null,
+                elevation: null,
+                latitude: null,
+                features: [],
+                soilType: null, 
+                climate: null
+            };
+        }
+        
+        // Extract origin from tea object
+        const origin = tea.origin || (tea.geography && tea.geography.origin) || '';
+        
+        // Get base analysis from origin
+        const analysis = this.getGeographicAnalysis(origin);
+        
+        // Enhance with tea.geography data if available
+        if (tea.geography) {
+            analysis.elevation = tea.geography.altitude || analysis.elevation;
+            analysis.latitude = tea.geography.latitude || analysis.latitude;
+            
+            // Update elevation category based on actual altitude
+            if (tea.geography.altitude) {
+                if (tea.geography.altitude >= this.elevationLevels.veryHigh.min) {
+                    analysis.elevationCategory = 'very high';
+                } else if (tea.geography.altitude >= this.elevationLevels.high.min) {
+                    analysis.elevationCategory = 'high';
+                } else if (tea.geography.altitude >= this.elevationLevels.medium.min) {
+                    analysis.elevationCategory = 'medium';
+                } else {
+                    analysis.elevationCategory = 'low';
+                }
+            }
+            
+            // Update latitude zone based on actual latitude
+            if (tea.geography.latitude) {
+                const absLatitude = Math.abs(tea.geography.latitude);
+                if (absLatitude <= this.latitudeZones.tropical.max) {
+                    analysis.latitudeZone = 'tropical';
+                } else if (absLatitude <= this.latitudeZones.subtropical.max) {
+                    analysis.latitudeZone = 'subtropical';
+                } else if (absLatitude <= this.latitudeZones.temperate.max) {
+                    analysis.latitudeZone = 'temperate';
+                } else {
+                    analysis.latitudeZone = 'subpolar';
+                }
+            }
+            
+            // Update description with actual values
+            analysis.description = `Tea from ${origin} grows at ${analysis.elevationCategory} elevation (${analysis.elevation}m)`;
+            if (analysis.latitude) {
+                analysis.description += ` in a ${analysis.latitudeZone} climate zone (${analysis.latitude}° latitude)`;
+            }
+            if (analysis.features.length > 0) {
+                analysis.description += `, with ${analysis.features.join(' and ')} terrain`;
+            }
+            if (analysis.soilType) {
+                analysis.description += `, in ${analysis.soilType} soil`;
+            }
+            if (analysis.climate) {
+                analysis.description += `, experiencing a ${analysis.climate} climate`;
+            }
+        }
+        
+        return {
+            geographicData: analysis,
+            effects: analysis.effects || {},
+            region: analysis.region,
+            elevation: analysis.elevation,
+            latitude: analysis.latitude,
+            features: analysis.features,
+            soilType: analysis.soilType,
+            climate: analysis.climate
+        };
+    }
+    
+    // Format inference as human-readable markdown
+    formatInference(inference) {
+        if (!inference || !inference.geographicData) {
+            return "## Geographic Analysis\n\nNo geographic data available.";
+        }
+        
+        const { geographicData } = inference;
+        
+        let md = `# Geographic Analysis\n\n`;
+        
+        // Add description
+        md += `${geographicData.description}\n\n`;
+        
+        // Region Information
+        md += `## Region Details\n`;
+        md += `- **Region**: ${geographicData.region || 'Unknown'}\n`;
+        if (geographicData.regionSignature) {
+            md += `- **Regional Signature**: ${geographicData.regionSignature}\n`;
+        }
+        if (geographicData.famousStyles && geographicData.famousStyles.length > 0) {
+            md += `- **Famous Styles**: ${geographicData.famousStyles.join(', ')}\n`;
+        }
+        md += '\n';
+        
+        // Geographic Characteristics
+        md += `## Geographic Characteristics\n`;
+        md += `- **Elevation**: ${geographicData.elevation}m (${geographicData.elevationCategory})\n`;
+        md += `- **Latitude**: ${geographicData.latitude}° (${geographicData.latitudeZone})\n`;
+        md += `- **Features**: ${geographicData.features.join(', ')}\n`;
+        md += `- **Soil Type**: ${geographicData.soilType}\n`;
+        md += `- **Climate**: ${geographicData.climate}\n\n`;
+        
+        // Effects
+        if (geographicData.effects && Object.keys(geographicData.effects).length > 0) {
+            md += `## Geographic Effects\n`;
+            Object.entries(geographicData.effects)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([effect, score]) => {
+                    const bar = '█'.repeat(Math.round(score)) + '░'.repeat(10 - Math.round(score));
+                    md += `${effect.padEnd(15)} ${bar} ${score.toFixed(1)}\n`;
+                });
+            md += '\n';
+        }
+        
+        // Seasonality
+        if (geographicData.seasonality) {
+            md += `## Seasonality\n`;
+            Object.entries(geographicData.seasonality).forEach(([season, desc]) => {
+                md += `- **${season.charAt(0).toUpperCase() + season.slice(1)}**: ${desc}\n`;
+            });
+            md += '\n';
+        }
+        
+        return md;
+    }
+    
+    // Serialize inference to structured JSON
+    serialize(inference) {
+        if (!inference || !inference.geographicData) {
+            return {
+                region: null,
+                elevation: {
+                    value: null,
+                    category: null
+                },
+                latitude: {
+                    value: null,
+                    zone: null
+                },
+                features: [],
+                soilType: null,
+                climate: null,
+                effects: {},
+                description: "No geographic data available"
+            };
+        }
+
+        const { geographicData } = inference;
+        
+        return {
+            region: geographicData.region,
+            elevation: {
+                value: geographicData.elevation,
+                category: geographicData.elevationCategory
+            },
+            latitude: {
+                value: geographicData.latitude,
+                zone: geographicData.latitudeZone
+            },
+            features: geographicData.features,
+            soilType: geographicData.soilType,
+            climate: geographicData.climate,
+            effects: geographicData.effects || {},
+            description: geographicData.description
         };
     }
     
@@ -577,251 +764,6 @@ class GeographyCalculator {
                 regionalSeasonality[geoData.region] : null
         };
     }
-    
-    /**
-     * Generate code representation of effects calculation
-     * @param {string} origin - The tea's origin
-     * @return {string} - Code representation for debug display
-     */
-    getEffectsCalculationText(origin) {
-        const geoData = this.extractGeographicData(origin);
-        const analysis = this.getGeographicAnalysis(origin);
-        const scores = analysis.effects;
-        
-        if (Object.keys(scores).length === 0) {
-            return '// No significant geographical effects detected';
-        }
-        
-        let code = `// Geographic analysis for ${origin}:\n`;
-        code += `// Elevation: ${geoData.elevation}m (${analysis.elevationCategory})\n`;
-        
-        if (geoData.latitude) {
-            code += `// Latitude: ${geoData.latitude}° (${analysis.latitudeZone})\n`;
-        }
-        
-        if (geoData.features.length > 0) {
-            code += `// Terrain: ${geoData.features.join(', ')}\n`;
-        }
-        
-        if (geoData.soilType) {
-            code += `// Soil: ${geoData.soilType}\n`;
-        }
-        
-        if (geoData.climate) {
-            code += `// Climate: ${geoData.climate}\n`;
-        }
-        
-        code += '\n// Effect contributions:\n';
-        
-        return code + Object.entries(scores)
-            .sort((a, b) => b[1] - a[1])
-            .map(([effect, value]) => `scores['${effect}'] += ${value.toFixed(1)}; // geographic influence`)
-            .join('\n');
-    }
-
-    /**
-     * Main calculation method - matches TimingCalculator's structure
-     * @param {Object} tea - The tea object to analyze
-     * @return {Object} - Contains both inference and serialized data
-     */
-    calculate(tea) {
-        const inference = this.infer(tea);
-        return {
-            inference: this.formatInference(inference),
-            data: this.serialize(inference)
-        };
-    }
-
-    /**
-     * Get the inference output for the calculator
-     * @param {Object} tea - The tea object containing origin and other properties
-     * @return {Object} - Raw data and calculations
-     */
-    infer(tea) {
-        if (!tea || !tea.origin) {
-            return {
-                geographicData: {
-                    region: null,
-                    elevation: null,
-                    elevationCategory: null,
-                    latitude: null,
-                    latitudeZone: null,
-                    features: [],
-                    soilType: null,
-                    climate: null,
-                    effects: {},
-                    description: "No geographic data available"
-                },
-                effects: {},
-                region: null,
-                elevation: null,
-                latitude: null,
-                features: [],
-                soilType: null,
-                climate: null
-            };
-        }
-
-        // Get base analysis from origin
-        const analysis = this.getGeographicAnalysis(tea.origin);
-        
-        // Enhance with tea.geography data if available
-        if (tea.geography) {
-            analysis.elevation = tea.geography.altitude || analysis.elevation;
-            analysis.latitude = tea.geography.latitude || analysis.latitude;
-            
-            // Update elevation category based on actual altitude
-            if (tea.geography.altitude) {
-                if (tea.geography.altitude >= this.elevationLevels.veryHigh.min) {
-                    analysis.elevationCategory = 'very high';
-                } else if (tea.geography.altitude >= this.elevationLevels.high.min) {
-                    analysis.elevationCategory = 'high';
-                } else if (tea.geography.altitude >= this.elevationLevels.medium.min) {
-                    analysis.elevationCategory = 'medium';
-                } else {
-                    analysis.elevationCategory = 'low';
-                }
-            }
-            
-            // Update latitude zone based on actual latitude
-            if (tea.geography.latitude) {
-                const absLatitude = Math.abs(tea.geography.latitude);
-                if (absLatitude <= this.latitudeZones.tropical.max) {
-                    analysis.latitudeZone = 'tropical';
-                } else if (absLatitude <= this.latitudeZones.subtropical.max) {
-                    analysis.latitudeZone = 'subtropical';
-                } else if (absLatitude <= this.latitudeZones.temperate.max) {
-                    analysis.latitudeZone = 'temperate';
-                } else {
-                    analysis.latitudeZone = 'subpolar';
-                }
-            }
-            
-            // Update description with actual values
-            analysis.description = `Tea from ${tea.origin} grows at ${analysis.elevationCategory} elevation (${analysis.elevation}m)`;
-            if (analysis.latitude) {
-                analysis.description += ` in a ${analysis.latitudeZone} climate zone (${analysis.latitude}° latitude)`;
-            }
-            if (analysis.features.length > 0) {
-                analysis.description += `, with ${analysis.features.join(' and ')} terrain`;
-            }
-            if (analysis.soilType) {
-                analysis.description += `, in ${analysis.soilType} soil`;
-            }
-            if (analysis.climate) {
-                analysis.description += `, experiencing a ${analysis.climate} climate`;
-            }
-        }
-        
-        return {
-            geographicData: analysis,
-            effects: analysis.effects,
-            region: analysis.region,
-            elevation: analysis.elevation,
-            latitude: analysis.latitude,
-            features: analysis.features,
-            soilType: analysis.soilType,
-            climate: analysis.climate
-        };
-    }
-
-    /**
-     * Format inference as markdown
-     * @param {Object} inference - The inference output
-     * @return {string} - Formatted markdown string
-     */
-    formatInference(inference) {
-        const { geographicData } = inference;
-        
-        let md = `# Geographic Analysis\n\n`;
-        
-        // Add description
-        md += `${geographicData.description}\n\n`;
-        
-        // Region Information
-        md += `## Region Details\n`;
-        md += `- **Region**: ${geographicData.region || 'Unknown'}\n`;
-        if (geographicData.regionSignature) {
-            md += `- **Regional Signature**: ${geographicData.regionSignature}\n`;
-        }
-        if (geographicData.famousStyles && geographicData.famousStyles.length > 0) {
-            md += `- **Famous Styles**: ${geographicData.famousStyles.join(', ')}\n`;
-        }
-        md += '\n';
-        
-        // Geographic Characteristics
-        md += `## Geographic Characteristics\n`;
-        md += `- **Elevation**: ${geographicData.elevation}m (${geographicData.elevationCategory})\n`;
-        md += `- **Latitude**: ${geographicData.latitude}° (${geographicData.latitudeZone})\n`;
-        md += `- **Features**: ${geographicData.features.join(', ')}\n`;
-        md += `- **Soil Type**: ${geographicData.soilType}\n`;
-        md += `- **Climate**: ${geographicData.climate}\n\n`;
-        
-        // Effects
-        if (Object.keys(geographicData.effects).length > 0) {
-            md += `## Geographic Effects\n`;
-            Object.entries(geographicData.effects)
-                .sort((a, b) => b[1] - a[1])
-                .forEach(([effect, score]) => {
-                    const bar = '█'.repeat(Math.round(score)) + '░'.repeat(10 - Math.round(score));
-                    md += `${effect.padEnd(15)} ${bar} ${score.toFixed(1)}\n`;
-                });
-            md += '\n';
-        }
-        
-        // Seasonality
-        if (geographicData.seasonality) {
-            md += `## Seasonality\n`;
-            md += `${geographicData.seasonality}\n\n`;
-        }
-        
-        return md;
-    }
-
-    /**
-     * Get the serialized calculation process
-     * @param {Object} inference - The inference output
-     * @return {Object} - Structured data for display
-     */
-    serialize(inference) {
-        if (!inference || !inference.geographicData) {
-            return {
-                region: null,
-                elevation: {
-                    value: null,
-                    category: null
-                },
-                latitude: {
-                    value: null,
-                    zone: null
-                },
-                features: [],
-                soilType: null,
-                climate: null,
-                effects: {},
-                description: "No geographic data available"
-            };
-        }
-
-        const { geographicData } = inference;
-        
-        return {
-            region: geographicData.region,
-            elevation: {
-                value: geographicData.elevation,
-                category: geographicData.elevationCategory
-            },
-            latitude: {
-                value: geographicData.latitude,
-                zone: geographicData.latitudeZone
-            },
-            features: geographicData.features,
-            soilType: geographicData.soilType,
-            climate: geographicData.climate,
-            effects: geographicData.effects,
-            description: geographicData.description
-        };
-    }
 }
 
-export { GeographyCalculator }; 
+export default GeographyCalculator;

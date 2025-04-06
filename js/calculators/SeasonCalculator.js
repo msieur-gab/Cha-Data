@@ -2,7 +2,7 @@
 // Calculate optimal seasonal suitability for teas with a scientific approach
 
 import { seasonalFactors } from '../props/SeasonalFactors.js';
-import { teaTypeSeasonalExplanations, seasonalFlavorAffinities, seasonOpposites, teaTypeInfo } from '../props/TeaTypeDescriptors.js';
+import { teaTypeSeasonalExplanations, seasonalFlavorAffinities, seasonOpposites } from '../props/TeaTypeDescriptors.js';
 import { processingInfluences, significantSeasonalProcessing } from '../props/ProcessingInfluences.js';
 import { validateObject, normalizeString, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
 
@@ -13,13 +13,77 @@ export class SeasonCalculator {
         this.seasons = ['spring', 'summer', 'fall', 'winter'];
     }
     
-    // Calculate seasonal suitability for a tea based on its properties
-    calculateSeasonalSuitability(tea) {
+    // Main calculate method following standardized calculator pattern
+    calculate(tea) {
+        const inference = this.infer(tea);
+        return {
+            inference: this.formatInference(inference),
+            data: this.serialize(inference)
+        };
+    }
+    
+    // Inferencer: Processes tea data and produces raw insights
+    infer(tea) {
         // Validate tea object
-        if (!tea || typeof tea !== 'object') {
-            return { error: 'Invalid tea object' };
+        tea = validateObject(tea);
+        
+        // Calculate seasonal suitability scores
+        const suitabilityResults = this.calculateSeasonalSuitability(tea);
+        
+        return {
+            scores: suitabilityResults.scores || {},
+            bestSeasons: suitabilityResults.bestSeasons || [],
+            explanations: suitabilityResults.explanations || {},
+            scientificBasis: suitabilityResults.explanations?.scientific || ''
+        };
+    }
+    
+    // Format inference as human-readable markdown
+    formatInference(inference) {
+        const { scores, bestSeasons, explanations, scientificBasis } = inference;
+        
+        let md = `## Seasonal Analysis\n\n`;
+        
+        // Add general description
+        if (explanations && explanations.general) {
+            md += `${explanations.general}\n\n`;
         }
         
+        // Add season scores and explanations
+        md += '### Seasonal Suitability\n\n';
+        for (const season of this.seasons) {
+            const score = scores[season];
+            const explanation = explanations[season];
+            
+            // Add score bar
+            const barLength = Math.round(score);
+            const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
+            
+            md += `#### ${season.charAt(0).toUpperCase() + season.slice(1)}\n`;
+            md += `Score: ${score.toFixed(1)}/10\n`;
+            md += `[${bar}]\n`;
+            md += `${explanation}\n\n`;
+        }
+        
+        // Add scientific basis
+        md += '### Scientific Basis\n\n';
+        md += `${scientificBasis}\n`;
+        
+        return md;
+    }
+    
+    // Serialize inference for JSON export
+    serialize(inference) {
+        return {
+            scores: inference.scores,
+            bestSeasons: inference.bestSeasons,
+            explanations: inference.explanations,
+            scientificBasis: inference.scientificBasis
+        };
+    }
+    
+    // Calculate seasonal suitability for a tea based on its properties
+    calculateSeasonalSuitability(tea) {
         // Default values for missing properties
         const safeTea = {
             type: tea.type || 'unknown',
@@ -325,11 +389,7 @@ export class SeasonCalculator {
         } else if (tea.type === "black") {
             explanation += "with full oxidation creating warming properties beneficial in cooler seasons.\n";
         } else if (tea.type === "dark" || tea.type === "puerh") {
-            const teaTypeDetail = teaTypeInfo[tea.type] || "";
             explanation += "with post-fermentation creating complex warming characteristics particularly beneficial in cooler seasons.\n";
-            if (teaTypeDetail) {
-                explanation += `• ${teaTypeDetail}\n`;
-            }
         }
         
         // Chemical composition
@@ -382,129 +442,6 @@ export class SeasonCalculator {
         ];
         return months[month - 1] || "Unknown Month";
     }
-
-    // Calculate the best seasons for a tea
-    calculateIdealSeasons(tea) {
-        if (!tea || typeof tea !== 'object') {
-            return [];
-        }
-        
-        const results = [];
-        
-        // Calculate suitability for each season
-        Object.keys(this.seasonalData).forEach(season => {
-            const suitability = this.calculateSeasonSuitability(tea, season);
-            results.push({
-                season,
-                score: suitability.score,
-                explanation: suitability.explanation
-            });
-        });
-        
-        // Sort by suitability score (descending)
-        return sortByProperty(results, 'score');
-    }
-
-    // Get recommendations for the current season
-    getSeasonalRecommendations(teas, season) {
-        if (!Array.isArray(teas) || teas.length === 0) {
-            return [];
-        }
-        
-        if (!season) {
-            season = this._getCurrentSeason();
-        }
-        
-        // Calculate suitability for each tea
-        const scoredTeas = teas.map(tea => {
-            const suitability = this.calculateSeasonSuitability(tea, season);
-            return {
-                ...tea,
-                seasonalScore: suitability.score,
-                seasonalExplanation: suitability.explanation
-            };
-        });
-        
-        // Return sorted by seasonal suitability (descending)
-        return sortByProperty(scoredTeas, 'seasonalScore');
-    }
-    
-    // Get top recommendations for each season
-    getAllSeasonRecommendations(teas, limit = 3) {
-        if (!Array.isArray(teas) || teas.length === 0) {
-            return {};
-        }
-        
-        const results = {};
-        
-        // Get recommendations for each season
-        Object.keys(this.seasonalData).forEach(season => {
-            const recommendations = this.getSeasonalRecommendations(teas, season);
-            results[season] = getTopItems(recommendations, limit);
-        });
-        
-        return results;
-    }
-
-    // New method to infer seasonal suitability
-    infer(tea) {
-        const result = this.calculateSeasonalSuitability(tea);
-        return {
-            scores: result.scores,
-            bestSeasons: result.bestSeasons,
-            explanations: result.explanations,
-            scientificBasis: result.explanations.scientific
-        };
-    }
-
-    // Format inference as markdown
-    formatInference(inference) {
-        let md = '## Seasonal Analysis\n\n';
-        
-        // Add general description
-        md += `${inference.explanations.general}\n\n`;
-        
-        // Add season scores and explanations
-        md += '### Seasonal Suitability\n\n';
-        for (const season of this.seasons) {
-            const score = inference.scores[season];
-            const explanation = inference.explanations[season];
-            
-            // Add score bar
-            const barLength = Math.round(score);
-            const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
-            
-            md += `#### ${season.charAt(0).toUpperCase() + season.slice(1)}\n`;
-            md += `Score: ${score.toFixed(1)}/10\n`;
-            md += `[${bar}]\n`;
-            md += `${explanation}\n\n`;
-        }
-        
-        // Add scientific basis
-        md += '### Scientific Basis\n\n';
-        md += `${inference.scientificBasis}\n`;
-        
-        return md;
-    }
-
-    // Serialize inference for JSON export
-    serialize(inference) {
-        return {
-            scores: inference.scores,
-            bestSeasons: inference.bestSeasons,
-            explanations: inference.explanations,
-            scientificBasis: inference.scientificBasis
-        };
-    }
-
-    // Main calculate method following our pattern
-    calculate(tea) {
-        const inference = this.infer(tea);
-        return {
-            inference: this.formatInference(inference),
-            data: this.serialize(inference)
-        };
-    }
 }
 
-export default SeasonCalculator; 
+export default SeasonCalculator;

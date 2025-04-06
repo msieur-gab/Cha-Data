@@ -9,6 +9,160 @@ export class ProcessingCalculator {
     this.processingInfluences = processingInfluences || {};
   }
   
+  // Main calculate method following standardized calculator pattern
+  calculate(tea) {
+    const inference = this.infer(tea);
+    return {
+      inference: this.formatInference(inference),
+      data: this.serialize(inference)
+    };
+  }
+  
+  // Infer processing method analysis
+  infer(tea) {
+    if (!tea || !tea.processingMethods || !Array.isArray(tea.processingMethods) || tea.processingMethods.length === 0) {
+      return {
+        description: 'No processing information available',
+        processingMethods: [],
+        methodCount: 0,
+        methodCategories: {},
+        processingInfluence: {},
+        methodDetails: []
+      };
+    }
+    
+    const processingMethods = tea.processingMethods;
+    const processingAnalysis = this.getProcessingAnalysis(tea);
+    const processingInfluence = this.calculateProcessingInfluence(processingMethods);
+    const methodDetails = this.getProcessingDetails(processingMethods);
+    
+    return {
+      description: processingAnalysis.description,
+      processingMethods,
+      methodCount: processingAnalysis.methodCount,
+      methodCategories: processingAnalysis.methodCategories,
+      processingInfluence,
+      methodDetails
+    };
+  }
+  
+  // Format inference as markdown
+  formatInference(inference) {
+    if (!inference) {
+      return '## Processing Analysis\n\nNo processing data available.';
+    }
+
+    let md = '## Processing Analysis\n\n';
+    
+    // Add description
+    md += `${inference.description}\n\n`;
+    
+    // Add processing methods
+    if (inference.processingMethods && inference.processingMethods.length > 0) {
+      md += '### Processing Methods\n\n';
+      inference.processingMethods.forEach(method => {
+        md += `- **${method}**\n`;
+      });
+      md += '\n';
+    }
+    
+    // Add method categories
+    if (inference.methodCategories && Object.keys(inference.methodCategories).length > 0) {
+      md += '### Method Categories\n\n';
+      Object.entries(inference.methodCategories).forEach(([category, methods]) => {
+        md += `- **${category}**: ${methods.join(', ')}\n`;
+      });
+      md += '\n';
+    }
+    
+    // Add processing influence on effects
+    if (inference.processingInfluence && Object.keys(inference.processingInfluence).length > 0) {
+      md += '### Processing Influence on Effects\n\n';
+      Object.entries(inference.processingInfluence)
+        .sort(([, a], [, b]) => b - a)
+        .forEach(([effect, score]) => {
+          const barLength = Math.round(score);
+          const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
+          
+          md += `- **${effect}**: ${score.toFixed(1)}/10\n`;
+          md += `  [${bar}]\n`;
+        });
+      md += '\n';
+    }
+    
+    // Add method details
+    if (inference.methodDetails && inference.methodDetails.length > 0) {
+      md += '### Method Details\n\n';
+      inference.methodDetails.forEach(detail => {
+        md += `#### ${detail.method}\n`;
+        md += `Category: ${detail.category}\n`;
+        md += `Intensity: ${detail.intensity}\n`;
+        
+        if (detail.description) {
+          md += `\n${detail.description}\n`;
+        }
+        
+        if (detail.effects && Object.keys(detail.effects).length > 0) {
+          md += '\nEffects:\n';
+          Object.entries(detail.effects)
+            .sort(([, a], [, b]) => b - a)
+            .forEach(([effect, score]) => {
+              md += `- ${effect}: ${score}\n`;
+            });
+        }
+        
+        md += '\n';
+      });
+    }
+    
+    return md;
+  }
+
+  // Serialize inference for JSON export
+  serialize(inference) {
+    if (!inference) {
+      return {
+        processing: {
+          profile: {
+            description: 'No processing data available',
+            methods: [],
+            methodCount: 0,
+            influence: {}
+          },
+          categories: {},
+          methodDetails: [],
+          _sectionRef: "processing"
+        }
+      };
+    }
+
+    // Create the profile section
+    const profile = {
+      description: inference.description || 'No description available',
+      methods: inference.processingMethods || [],
+      methodCount: inference.methodCount || 0,
+      influence: inference.processingInfluence || {}
+    };
+
+    // Create the method details section
+    const methodDetails = (inference.methodDetails || []).map(detail => ({
+      method: detail.method || 'Unknown Method',
+      category: detail.category || 'general',
+      intensity: detail.intensity || 1.0,
+      description: detail.description || '',
+      effects: detail.effects || {}
+    }));
+
+    return {
+      processing: {
+        profile,
+        categories: inference.methodCategories || {},
+        methodDetails,
+        _sectionRef: "processing"
+      }
+    };
+  }
+  
   // Calculate the influence of processing methods on tea effects
   calculateProcessingInfluence(processingMethods) {
     if (!Array.isArray(processingMethods) || !this.processingInfluences) {
@@ -178,8 +332,10 @@ export class ProcessingCalculator {
     const methodCategories = this.categorizeProcessingMethods(tea.processingMethods);
     
     // Determine the primary processing category
-    const primaryCategory = Object.entries(methodCategories)
-      .sort((a, b) => b[1].length - a[1].length)[0]?.[0] || null;
+    const primaryCategoryEntry = Object.entries(methodCategories)
+      .sort((a, b) => b[1].length - a[1].length)[0];
+    
+    const primaryCategory = primaryCategoryEntry ? primaryCategoryEntry[0] : null;
     
     // Generate a natural language description
     let description;
@@ -253,4 +409,4 @@ export class ProcessingCalculator {
   }
 }
 
-export default ProcessingCalculator; 
+export default ProcessingCalculator;
