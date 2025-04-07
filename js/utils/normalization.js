@@ -196,12 +196,12 @@ export function enhanceDominantEffect(scores) {
         }
         
         // Enhance the dominant effect (increase by 15% instead of 10%)
-        enhancedScores[dominantId] = Math.min(10, dominantScore * 1.15);
+        enhancedScores[dominantId] = Math.min(9.5, dominantScore * 1.05);
         
         // If we have supporting effects, enhance them slightly (but less than dominant)
         if (sortedEffects.length > 1) {
             const [supportingId, supportingScore] = sortedEffects[1];
-            enhancedScores[supportingId] = Math.min(10, supportingScore * 1.05);
+            enhancedScores[supportingId] = Math.min(9.0, supportingScore * 1.02);
             
             // Make sure the supporting effect score doesn't exceed the dominant score
             if (enhancedScores[supportingId] >= enhancedScores[dominantId]) {
@@ -211,7 +211,7 @@ export function enhanceDominantEffect(scores) {
             // If we have a second supporting effect, enhance it very slightly
             if (sortedEffects.length > 2) {
                 const [supporting2Id, supporting2Score] = sortedEffects[2];
-                enhancedScores[supporting2Id] = Math.min(10, supporting2Score * 1.02);
+                enhancedScores[supporting2Id] = Math.min(8.5, supporting2Score * 1.01);
                 
                 // Make sure the second supporting effect doesn't exceed the first supporting effect
                 if (enhancedScores[supporting2Id] >= enhancedScores[supportingId]) {

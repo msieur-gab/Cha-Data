@@ -12,6 +12,8 @@ import {
 } from '../props/GeographicalDescriptors.js';
 
 import { validateObject, normalizeString, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
+// Add TCM mapping imports
+import * as TeaGlobalMapping from '../props/TeaGlobalMapping.js';
 
 export class GeographyCalculator {
     constructor(config) {
@@ -435,13 +437,31 @@ export class GeographyCalculator {
      * @return {Object} - The effect scores based on geography
      */
     calculateGeographicEffects(origin) {
-        if (!origin) return {};
+        // Return empty object if no origin
+        if (!origin || (typeof origin !== 'string' && typeof origin !== 'object')) {
+            return {};
+        }
         
-        // Extract geographic data based on origin
+        // Initialize scores object
+        const scores = {};
+        
+        // Extract geographic data
         const geoData = this.extractGeographicData(origin);
         
-        // Initialize scores
-        const scores = {};
+        // Calculate Element scores based on geography and processing
+        if (geoData.tea) {
+            const elementScores = TeaGlobalMapping.mapGeographyAndProcessingToElementScores(geoData.tea);
+            const primaryElement = Object.keys(elementScores).length > 0
+                ? Object.entries(elementScores).sort((a, b) => b[1] - a[1])[0][0]
+                : 'earth'; // Default element
+
+            // Apply TCM effect mapping based on primary element
+            if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[primaryElement]) {
+                TeaGlobalMapping.tcmToPrimaryEffectMap[primaryElement].forEach(([effect, strength]) => {
+                    scores[effect] = (scores[effect] || 0) + strength;
+                });
+            }
+        }
         
         // Apply elevation effects
         this.applyElevationEffects(geoData, scores);
@@ -449,18 +469,18 @@ export class GeographyCalculator {
         // Apply latitude effects
         this.applyLatitudeEffects(geoData, scores);
         
-        // Apply terrain/feature effects
+        // Apply terrain effects
         this.applyTerrainEffects(geoData, scores);
         
-        // Apply soil type effects
+        // Apply soil effects
         this.applySoilEffects(geoData, scores);
         
         // Apply climate effects
         this.applyClimateEffects(geoData, scores);
         
-        // Apply any adjustments for well-known specific regions
+        // Apply region-specific adjustments
         this.applyRegionSpecificAdjustments(geoData, scores);
-    
+        
         return scores;
     }
     
@@ -470,67 +490,113 @@ export class GeographyCalculator {
      * @return {Object} - Geographic data including elevation, latitude, etc.
      */
     extractGeographicData(origin) {
-        const originLower = origin.toLowerCase();
-        let geoData = {
+        // Initialize result object with default values
+        const result = {
+            region: null,
+            country: null,
             elevation: null,
             latitude: null,
-            features: [],
-            soilType: null,
+            longitude: null,
             climate: null,
-            region: 'unknown'
+            terrainType: null,
+            geographicFeatures: [],
+            soilType: null,
+            tea: null // Store tea object reference for Five Element calculation
         };
         
-        // Check for explicit elevation mentions
-        const elevationMatch = originLower.match(/(\d+)\s*meters|(\d+)\s*m elevation/);
-        if (elevationMatch) {
-            geoData.elevation = parseInt(elevationMatch[1] || elevationMatch[2]);
-        }
-        
-        // Check for known regions in our database
-        for (const region in this.regionData) {
-            if (originLower.includes(region)) {
-                geoData = {
-                    ...geoData,
-                    ...this.regionData[region],
-                    region,
-                    elevation: geoData.elevation || this.regionData[region].avgElevation
-                };
-                break;
+        // If origin is a full tea object
+        if (origin && typeof origin === 'object' && 'geography' in origin) {
+            // Store the full tea object for Five Element calculation
+            result.tea = origin;
+            
+            // Extract geography data
+            if (origin.geography) {
+                const geo = origin.geography;
+                result.elevation = geo.altitude || geo.elevation;
+                result.latitude = geo.latitude;
+                result.longitude = geo.longitude;
+                result.climate = geo.climate;
+                result.geographicFeatures = Array.isArray(geo.features) ? geo.features : [];
+                result.soilType = geo.soilType;
+                
+                // Extract region if available
+                if (geo.origin) {
+                    if (typeof geo.origin === 'string') {
+                        result.region = normalizeString(geo.origin);
+                    } else if (typeof geo.origin === 'object') {
+                        result.region = geo.origin.region ? normalizeString(geo.origin.region) : null;
+                        result.country = geo.origin.country ? normalizeString(geo.origin.country) : null;
+                    }
+                }
             }
+            return result;
+        }
+
+        // If origin is a geography object
+        if (origin && typeof origin === 'object' && !('processingMethods' in origin)) {
+            result.elevation = origin.altitude || origin.elevation;
+            result.latitude = origin.latitude;
+            result.longitude = origin.longitude;
+            result.climate = origin.climate;
+            result.geographicFeatures = Array.isArray(origin.features) ? origin.features : [];
+            result.soilType = origin.soilType;
+            
+            // Extract region if available
+            if (origin.region) {
+                result.region = normalizeString(origin.region);
+            }
+            if (origin.country) {
+                result.country = normalizeString(origin.country);
+            }
+            
+            // Create a minimal tea object for element calculation
+            result.tea = {
+                geography: {
+                    latitude: result.latitude,
+                    longitude: result.longitude,
+                    altitude: result.elevation,
+                    climate: result.climate,
+                    features: result.geographicFeatures,
+                    soilType: result.soilType
+                },
+                processingMethods: []  // Empty array as we don't have processing methods
+            };
+            
+            return result;
         }
         
         // If no specific elevation or region match was found, infer from keywords
-        if (!geoData.elevation) {
-            if (originLower.includes('high altitude') || originLower.includes('high-grown')) {
-                geoData.elevation = 1800;  // Typical high altitude
-            } else if (originLower.includes('mountain')) {
-                geoData.elevation = 1200;  // Typical mountain
-            } else if (originLower.includes('hill')) {
-                geoData.elevation = 800;   // Typical hill
-            } else if (originLower.includes('lowland') || originLower.includes('valley')) {
-                geoData.elevation = 300;   // Typical lowland
+        if (!result.elevation) {
+            if (origin.includes('high altitude') || origin.includes('high-grown')) {
+                result.elevation = 1800;  // Typical high altitude
+            } else if (origin.includes('mountain')) {
+                result.elevation = 1200;  // Typical mountain
+            } else if (origin.includes('hill')) {
+                result.elevation = 800;   // Typical hill
+            } else if (origin.includes('lowland') || origin.includes('valley')) {
+                result.elevation = 300;   // Typical lowland
             } else {
-                geoData.elevation = 500;   // Default moderate elevation
+                result.elevation = 500;   // Default moderate elevation
             }
         }
         
         // Infer features if not specified by a known region
-        if (geoData.features.length === 0) {
-            if (originLower.includes('mountain')) geoData.features.push('mountain');
-            if (originLower.includes('forest')) geoData.features.push('forest');
-            if (originLower.includes('coast')) geoData.features.push('coastal');
-            if (originLower.includes('river') || originLower.includes('delta')) geoData.features.push('river-delta');
-            if (originLower.includes('valley')) geoData.features.push('valley');
-            if (originLower.includes('plateau')) geoData.features.push('plateau');
-            if (originLower.includes('volcanic')) geoData.features.push('volcanic');
+        if (result.geographicFeatures.length === 0) {
+            if (origin.includes('mountain')) result.geographicFeatures.push('mountain');
+            if (origin.includes('forest')) result.geographicFeatures.push('forest');
+            if (origin.includes('coast')) result.geographicFeatures.push('coastal');
+            if (origin.includes('river') || origin.includes('delta')) result.geographicFeatures.push('river-delta');
+            if (origin.includes('valley')) result.geographicFeatures.push('valley');
+            if (origin.includes('plateau')) result.geographicFeatures.push('plateau');
+            if (origin.includes('volcanic')) result.geographicFeatures.push('volcanic');
             
             // Default feature if none are found
-            if (geoData.features.length === 0) {
-                geoData.features.push('standard');
+            if (result.geographicFeatures.length === 0) {
+                result.geographicFeatures.push('standard');
             }
         }
         
-        return geoData;
+        return result;
     }
     
     /**
@@ -599,7 +665,7 @@ export class GeographyCalculator {
      * @param {Object} scores - Effect scores to modify
      */
     applyTerrainEffects(geoData, scores) {
-        geoData.features.forEach(feature => {
+        geoData.geographicFeatures.forEach(feature => {
             switch (feature) {
                 case 'mountain':
                     scores.elevating = (scores.elevating || 0) + 1.5;
@@ -805,8 +871,8 @@ export class GeographyCalculator {
             description += ` in a ${latitudeZone} climate zone (${geoData.latitude}° latitude)`;
         }
         
-        if (geoData.features.length > 0) {
-            description += `, with ${geoData.features.join(' and ')} terrain`;
+        if (geoData.geographicFeatures.length > 0) {
+            description += `, with ${geoData.geographicFeatures.join(' and ')} terrain`;
         }
         
         if (geoData.soilType) {
@@ -844,7 +910,7 @@ export class GeographyCalculator {
             elevationCategory,
             latitude: geoData.latitude,
             latitudeZone,
-            features: geoData.features,
+            features: geoData.geographicFeatures,
             soilType: geoData.soilType,
             climate: geoData.climate,
             region: geoData.region,

@@ -2,6 +2,8 @@
 // Handles calculations related to tea compound effects (L-theanine, caffeine)
 
 import { validateObject } from '../utils/helpers.js';
+// Add TCM mapping imports
+import * as TeaGlobalMapping from '../props/TeaGlobalMapping.js';
 
 export class CompoundCalculator {
   constructor(config, primaryEffects) {
@@ -178,6 +180,17 @@ export class CompoundCalculator {
     }
   
     const levels = this.calculateCompoundLevels(tea);
+    
+    // Calculate Yin/Yang score
+    const yinYangScore = TeaGlobalMapping.mapCompoundRatioAndProcessingToYinYangScore(tea);
+    const yinYangNature = TeaGlobalMapping.getYinYangCategory(yinYangScore);
+
+    // Apply TCM effect mapping based on Yin/Yang nature
+    if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature]) {
+      TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature].forEach(([effect, strength]) => {
+        scores[effect] = (scores[effect] || 0) + strength;
+      });
+    }
     
     // Get penalty factors for disharmonious ratios
     const penaltyDisharmoniousGeneral = 0.7; // Penalty for disharmonious ratios

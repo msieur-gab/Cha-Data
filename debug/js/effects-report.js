@@ -4,7 +4,6 @@
  */
 
 import { teaDatabase } from '../../js/TeaDatabase.js';
-import { PrimaryEffectCalculator } from '../../js/calculators/PrimaryEffectCalculator.js';
 import { TeaEffectCalculator } from '../../js/calculators/TeaEffectCalculator.js';
 import { EffectSystemConfig } from '../../js/config/EffectSystemConfig.js';
 import { primaryEffects } from '../../js/props/PrimaryEffects.js';
@@ -21,7 +20,6 @@ import { mapEffectCombinations } from '../../js/utils/EffectInteractionMapper.js
 export async function generateEffectsReport(progressCallback) {
     // Initialize configuration and calculators
     const config = new EffectSystemConfig();
-    const primaryEffectCalculator = new PrimaryEffectCalculator();
     const teaEffectCalculator = new TeaEffectCalculator(config, {
         primaryEffects,
         processingInfluences,
@@ -42,15 +40,11 @@ export async function generateEffectsReport(progressCallback) {
     report += '=====================================================\n';
     report += 'Format: [Tea Name]\n';
     report += '  Expected: [Dominant] / [Supporting]\n';
-    report += '  Primary: [Dominant (score)] / [Supporting (score)]\n';
     report += '  Final: [Dominant (score)] / [Supporting (score)]\n';
     report += '=====================================================\n\n';
 
     // Calculate accuracy metrics
     let totalTeas = 0;
-    let primaryDominantMatches = 0;
-    let primarySupportingMatches = 0;
-    let primaryBothMatches = 0;
     let finalDominantMatches = 0;
     let finalSupportingMatches = 0;
     let finalBothMatches = 0;
@@ -66,10 +60,6 @@ export async function generateEffectsReport(progressCallback) {
         const expectedDominant = tea.expectedEffects?.dominant || 'none';
         const expectedSupporting = tea.expectedEffects?.supporting || 'none';
         
-        // Calculate primary effects
-        const primaryEffects = primaryEffectCalculator.calculateTcmBasedEffectScores(tea);
-        const topPrimaryEffects = getTopEffects(primaryEffects);
-        
         // Calculate final effects with all influences
         const result = teaEffectCalculator.infer(tea);
         const finalEffects = result.finalScores;
@@ -81,11 +71,6 @@ export async function generateEffectsReport(progressCallback) {
             expected: {
                 dominant: expectedDominant,
                 supporting: expectedSupporting
-            },
-            primary: {
-                dominant: topPrimaryEffects[0] || { id: 'none', score: 0 },
-                supporting: topPrimaryEffects[1] || { id: 'none', score: 0 },
-                allScores: { ...primaryEffects }
             },
             final: {
                 dominant: topFinalEffects[0] || { id: 'none', score: 0 },
@@ -101,10 +86,6 @@ export async function generateEffectsReport(progressCallback) {
         report += `${tea.name}\n`;
         report += `  Expected: ${expectedDominant} / ${expectedSupporting}\n`;
         
-        const primaryDominant = teaReport.primary.dominant;
-        const primarySupporting = teaReport.primary.supporting;
-        report += `  Primary: ${primaryDominant.id} (${primaryDominant.score.toFixed(1)}) / ${primarySupporting.id} (${primarySupporting.score.toFixed(1)})\n`;
-        
         const finalDominant = teaReport.final.dominant;
         const finalSupporting = teaReport.final.supporting;
         report += `  Final: ${finalDominant.id} (${finalDominant.score.toFixed(1)}) / ${finalSupporting.id} (${finalSupporting.score.toFixed(1)})\n`;
@@ -117,10 +98,6 @@ export async function generateEffectsReport(progressCallback) {
             
             const expDominant = tea.expectedEffects.dominant;
             const expSupporting = tea.expectedEffects.supporting || 'none';
-            
-            if (primaryDominant.id === expDominant) primaryDominantMatches++;
-            if (primarySupporting.id === expSupporting) primarySupportingMatches++;
-            if (primaryDominant.id === expDominant && primarySupporting.id === expSupporting) primaryBothMatches++;
             
             if (finalDominant.id === expDominant) finalDominantMatches++;
             if (finalSupporting.id === expSupporting) finalSupportingMatches++;
@@ -140,10 +117,6 @@ export async function generateEffectsReport(progressCallback) {
     report += 'ACCURACY SUMMARY\n';
     report += '=====================================================\n';
     report += `Total teas with expected effects: ${totalTeas}\n`;
-    report += '\nPrimary Effects Accuracy:\n';
-    report += `  Dominant effect match: ${primaryDominantMatches}/${totalTeas} (${(primaryDominantMatches/totalTeas*100).toFixed(1)}%)\n`;
-    report += `  Supporting effect match: ${primarySupportingMatches}/${totalTeas} (${(primarySupportingMatches/totalTeas*100).toFixed(1)}%)\n`;
-    report += `  Both effects match: ${primaryBothMatches}/${totalTeas} (${(primaryBothMatches/totalTeas*100).toFixed(1)}%)\n`;
     
     report += '\nFinal Effects Accuracy:\n';
     report += `  Dominant effect match: ${finalDominantMatches}/${totalTeas} (${(finalDominantMatches/totalTeas*100).toFixed(1)}%)\n`;
@@ -161,14 +134,6 @@ export async function generateEffectsReport(progressCallback) {
         teaReports,
         summary: {
             totalTeas,
-            primaryEffects: {
-                dominantMatches: primaryDominantMatches,
-                supportingMatches: primarySupportingMatches,
-                bothMatches: primaryBothMatches,
-                dominantMatchRate: (primaryDominantMatches/totalTeas*100).toFixed(1),
-                supportingMatchRate: (primarySupportingMatches/totalTeas*100).toFixed(1),
-                bothMatchRate: (primaryBothMatches/totalTeas*100).toFixed(1)
-            },
             finalEffects: {
                 dominantMatches: finalDominantMatches,
                 supportingMatches: finalSupportingMatches,

@@ -79,7 +79,7 @@ export class TeaEffectAnalyzer {
     // Calculate raw scores from each component
     const compoundScores = this.compoundCalculator.calculateCompoundEffects(safeTea);
     const flavorScores = this.flavorCalculator.calculateFlavorInfluence(safeTea.flavorProfile);
-    const processingScores = this.processingCalculator.calculateProcessingInfluence(safeTea.processingMethods);
+    const processingScores = this.processingCalculator.calculateProcessingInfluence(safeTea);
     const geoScores = this.geographicalCalculator.calculateGeographicalScores(safeTea);
     
     // Get component weights

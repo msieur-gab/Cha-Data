@@ -42,7 +42,7 @@ export function simulateTeaEffects() {
     console.log(`Processing tea: ${tea.name}`);
     
     // Calculate component scores once per tea
-    const processingScores = processingCalculator.calculateProcessingInfluence(tea.processingMethods);
+    const processingScores = processingCalculator.calculateProcessingInfluence(tea);
     const geoScores = geographyCalculator.calculateGeographicEffects(tea.origin);
     const flavorScores = flavorCalculator.calculateFlavorInfluence(tea.flavorProfile);
     const compoundScores = compoundCalculator.calculateCompoundEffects(tea);

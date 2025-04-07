@@ -22,7 +22,6 @@ import { primaryEffects } from '../../js/props/PrimaryEffects.js';
 import { flavorInfluences } from '../../js/props/FlavorInfluences.js';
 import { processingInfluences } from '../../js/props/ProcessingInfluences.js';
 import { normalizeString } from '../../js/utils/helpers.js';
-import { PrimaryEffectCalculator } from '../../js/calculators/PrimaryEffectCalculator.js';
 
 // Current tea and JSON data
 let currentTea = null;
@@ -238,130 +237,48 @@ function generateTestSections(tea) {
     
     // Define test sections
     const testSectionDefinitions = [
-        // Add Primary Effect Calculator section as the first section
         {
-            id: 'primary-effects',
-            title: 'Primary Effect Calculator',
-            calculator: 'PrimaryEffectCalculator',
+            id: 'expected-effects',
+            title: 'Expected Effects',
+            calculator: 'None',
             render: () => {
-                // Create instance of the calculator
-                const primaryEffectCalculator = new PrimaryEffectCalculator();
-                
-                // Derive baseline effects
-                const baselineEffects = primaryEffectCalculator.deriveBaselineEffects(tea);
-                
-                // Get TCM profile
-                const tcmProfile = primaryEffectCalculator.getTcmProfile(tea);
-                
-                // Calculate effect scores directly
-                const effectScores = primaryEffectCalculator.calculateTcmBasedEffectScores(tea);
-                
                 // Format the result as markdown
-                let markdown = `## Tea TCM Profile & Baseline Effects\n\n`;
+                let markdown = `## Tea Expected Effects\n\n`;
                 
-                // Display TCM Profile
-                markdown += `### TCM Profile\n`;
-                if (tcmProfile.yinYang) {
-                    markdown += `- **Yin/Yang Nature**: ${tcmProfile.yinYang}\n`;
+                // Display expected effects
+                markdown += `### Expected Effects\n`;
+                if (tea.expectedEffects?.dominant) {
+                    markdown += `- **Dominant Effect**: ${tea.expectedEffects.dominant}\n`;
                 }
-                if (tcmProfile.element) {
-                    markdown += `- **Primary Element**: ${tcmProfile.element}\n`;
-                }
-                if (tcmProfile.qiMovement) {
-                    markdown += `- **Qi Movement**: ${tcmProfile.qiMovement}\n`;
-                }
-                
-                // Show detailed scores if available
-                if (tcmProfile._details) {
-                    markdown += `\n#### Detailed Scores\n`;
-                    markdown += `- **Yin/Yang Score**: ${tcmProfile._details.yinYangScore}\n`;
-                    
-                    // Show element scores
-                    markdown += `- **Element Scores**:\n`;
-                    Object.entries(tcmProfile._details.elementScores || {})
-                        .sort(([, a], [, b]) => b - a)
-                        .forEach(([element, score]) => {
-                            markdown += `  - ${element}: ${score.toFixed(1)}\n`;
-                        });
-                    
-                    // Show qi movement scores
-                    markdown += `- **Qi Movement Scores**:\n`;
-                    Object.entries(tcmProfile._details.qiScores || {})
-                        .sort(([, a], [, b]) => b - a)
-                        .forEach(([movement, score]) => {
-                            markdown += `  - ${movement}: ${score.toFixed(1)}\n`;
-                        });
-                }
-                
-                // Display derived baseline effects
-                markdown += `\n### Calculated Baseline Effects\n`;
-                if (baselineEffects.dominant) {
-                    markdown += `- **Dominant Effect**: ${baselineEffects.dominant}\n`;
-                }
-                if (baselineEffects.supporting) {
-                    if (Array.isArray(baselineEffects.supporting)) {
-                        markdown += `- **Supporting Effect**: ${baselineEffects.supporting.join(', ')}\n`;
+                if (tea.expectedEffects?.supporting) {
+                    if (Array.isArray(tea.expectedEffects.supporting)) {
+                        markdown += `- **Supporting Effect**: ${tea.expectedEffects.supporting.join(', ')}\n`;
                     } else {
-                        markdown += `- **Supporting Effect**: ${baselineEffects.supporting}\n`;
+                        markdown += `- **Supporting Effect**: ${tea.expectedEffects.supporting}\n`;
                     }
                 }
                 
-                // Display effect scores derived from TCM properties
-                markdown += `\n### Effect Scores from TCM Properties\n`;
-                Object.entries(effectScores || {})
-                    .sort(([, a], [, b]) => b - a)
-                    .slice(0, 8) // Show top 8 effects
-                    .forEach(([effect, score]) => {
-                        const isBold = effect === baselineEffects.dominant ? '**' : 
-                                      (effect === baselineEffects.supporting || 
-                                      (Array.isArray(baselineEffects.supporting) && 
-                                       baselineEffects.supporting.includes(effect))) ? '*' : '';
-                        markdown += `- ${isBold}${effect}${isBold}: ${score.toFixed(1)}\n`;
-                    });
+                // Compound properties that influence effects
+                markdown += `\n### Compound Properties\n`;
+                const ratio = tea.lTheanineLevel / tea.caffeineLevel;
+                markdown += `- **L-Theanine Level**: ${tea.lTheanineLevel}/10\n`;
+                markdown += `- **Caffeine Level**: ${tea.caffeineLevel}/10\n`;
+                markdown += `- **L-Theanine/Caffeine Ratio**: ${ratio.toFixed(2)}\n`;
                 
-                // Compare with original expected effects if available
-                if (tea.expectedEffects) {
-                    markdown += `\n### Comparison with Original Expected Effects\n`;
-                    if (tea.expectedEffects.dominant) {
-                        const dominantMatch = baselineEffects.dominant === tea.expectedEffects.dominant;
-                        markdown += `- **Dominant**: ${dominantMatch ? '✓ Match' : `❌ Different (Original: ${tea.expectedEffects.dominant}, Calculated: ${baselineEffects.dominant})`}\n`;
-                    }
-                    
-                    if (tea.expectedEffects.supporting) {
-                        let supportingMatches = false;
-                        
-                        if (Array.isArray(baselineEffects.supporting) && Array.isArray(tea.expectedEffects.supporting)) {
-                            supportingMatches = tea.expectedEffects.supporting.every(effect => 
-                                baselineEffects.supporting.includes(effect));
-                        } else if (!Array.isArray(baselineEffects.supporting) && !Array.isArray(tea.expectedEffects.supporting)) {
-                            supportingMatches = baselineEffects.supporting === tea.expectedEffects.supporting;
-                        } else if (!Array.isArray(baselineEffects.supporting) && Array.isArray(tea.expectedEffects.supporting)) {
-                            supportingMatches = tea.expectedEffects.supporting.includes(baselineEffects.supporting);
-                        } else if (Array.isArray(baselineEffects.supporting) && !Array.isArray(tea.expectedEffects.supporting)) {
-                            supportingMatches = baselineEffects.supporting.includes(tea.expectedEffects.supporting);
-                        }
-                        
-                        if (supportingMatches) {
-                            markdown += `- **Supporting**: ✓ Match\n`;
-                        } else {
-                            markdown += `- **Supporting**: ❌ Different\n`;
-                            markdown += `  - Original: ${Array.isArray(tea.expectedEffects.supporting) ? 
-                                tea.expectedEffects.supporting.join(', ') : tea.expectedEffects.supporting}\n`;
-                            markdown += `  - Calculated: ${baselineEffects.supporting ? 
-                                (Array.isArray(baselineEffects.supporting) ? 
-                                    baselineEffects.supporting.join(', ') : baselineEffects.supporting) 
-                                : 'None'}\n`;
-                        }
-                    }
+                if (ratio > 1.5) {
+                    markdown += `\nHigh L-Theanine to Caffeine ratio promotes peaceful and soothing effects.\n`;
+                } else if (ratio < 1.0) {
+                    markdown += `\nLow L-Theanine to Caffeine ratio promotes revitalizing and awakening effects.\n`;
+                } else {
+                    markdown += `\nBalanced L-Theanine to Caffeine ratio promotes balanced effects.\n`;
                 }
                 
                 return markdown;
             },
             dataFlow: `
-                Input: Tea compound levels, processing methods, geographic data
-                → Calculate TCM profile (Yin/Yang, Element, Qi Movement)
-                → Map TCM profile to Primary Effects
-                → Output: Baseline dominant and supporting effects
+                Input: tea.expectedEffects, tea.lTheanineLevel, tea.caffeineLevel
+                → Display expected effects and compound properties
+                → Output: Expected effects summary
             `
         },
         {
@@ -539,8 +456,6 @@ function generateJsonData(tea) {
     const timingCalculator = new TimingCalculator(config, primaryEffects);
     const seasonCalculator = new SeasonCalculator(config, primaryEffects);
     const teaEffectCalculator = new TeaEffectCalculator(config);
-    // Add Primary Effect Calculator for deriving baseline effects
-    const primaryEffectCalculator = new PrimaryEffectCalculator();
     
     // Calculate results from individual calculators
     const compoundResult = compoundCalculator.calculate(tea);
@@ -559,23 +474,37 @@ function generateJsonData(tea) {
         geographyResult.data.effects // Pass just the effects part
     );
     
-    // 1. First, get base scores - using PrimaryEffectCalculator instead of expectedEffects
+    // 1. First, get base scores - using expectedEffects directly
     const baseScores = {};
     
-    // Use PrimaryEffectCalculator to derive baseline effects
-    const baselineEffects = primaryEffectCalculator.deriveBaselineEffects(tea);
-    
-    // Set baseline scores for dominant and supporting effects
-    if (baselineEffects.dominant) {
-        baseScores[baselineEffects.dominant] = 9.5; // Same value previously used for expectedEffects
-    }
-    
-    if (baselineEffects.supporting) {
-        baseScores[baselineEffects.supporting] = 7.5; // Same value previously used for expectedEffects
+    // Use expectedEffects for base scores
+    if (tea.expectedEffects) {
+        if (tea.expectedEffects.dominant) {
+            baseScores[tea.expectedEffects.dominant] = 9.5;
+        }
+        
+        if (tea.expectedEffects.supporting) {
+            if (Array.isArray(tea.expectedEffects.supporting)) {
+                tea.expectedEffects.supporting.forEach(effect => {
+                    baseScores[effect] = 7.5;
+                });
+            } else {
+                baseScores[tea.expectedEffects.supporting] = 7.5;
+            }
+        }
     }
     
     // Get the TCM profile for debugging/display
-    const tcmProfile = primaryEffectCalculator.getTcmProfile(tea);
+    const tcmProfile = {
+        yinYang: tea.yinYang,
+        element: tea.element,
+        qiMovement: tea.qiMovement,
+        _details: {
+            yinYangScore: tea.yinYangScore,
+            elementScores: tea.elementScores,
+            qiScores: tea.qiScores
+        }
+    };
     
     // Add additional effects based on tea properties
     const ratio = tea.lTheanineLevel / tea.caffeineLevel;
@@ -672,28 +601,28 @@ function generateJsonData(tea) {
     // 7. Ensure calculated baseline dominant effect gets appropriate boost
     Object.assign(finalScores, interactionScores);
     
-    // Use calculated baseline effects instead of expected effects
-    if (baselineEffects?.dominant && finalScores[baselineEffects.dominant]) {
+    // Use expected effects for boosting
+    if (tea.expectedEffects?.dominant && finalScores[tea.expectedEffects.dominant]) {
         // Find the highest score
         const highestScore = Math.max(...Object.values(finalScores));
         
-        // Make sure the baseline dominant effect is at least as high as any other effect
+        // Make sure the expected dominant effect is at least as high as any other effect
         // but with a smaller boost (0.2 instead of 0.5) to not overpower the natural calculation
-        if (finalScores[baselineEffects.dominant] < highestScore) {
-            finalScores[baselineEffects.dominant] = highestScore + 0.2;
+        if (finalScores[tea.expectedEffects.dominant] < highestScore) {
+            finalScores[tea.expectedEffects.dominant] = highestScore + 0.2;
         }
     }
     
-    // Add small boost to supporting baseline effect too (new)
-    if (baselineEffects?.supporting && finalScores[baselineEffects.supporting]) {
+    // Add small boost to supporting expected effect too (new)
+    if (tea.expectedEffects?.supporting && finalScores[tea.expectedEffects.supporting]) {
         // Find the second highest score
         const sortedScores = Object.values(finalScores).sort((a, b) => b - a);
         const secondHighestScore = sortedScores.length > 1 ? sortedScores[1] : 0;
         
         // Apply a small boost to ensure it's competitive but not artificially dominant
-        if (finalScores[baselineEffects.supporting] < secondHighestScore) {
-            finalScores[baselineEffects.supporting] = Math.min(
-                finalScores[baselineEffects.dominant] - 0.5, // Keep below dominant
+        if (finalScores[tea.expectedEffects.supporting] < secondHighestScore) {
+            finalScores[tea.expectedEffects.supporting] = Math.min(
+                finalScores[tea.expectedEffects.dominant] - 0.5, // Keep below dominant
                 secondHighestScore + 0.1 // Small boost
             );
         }
@@ -748,7 +677,7 @@ function generateJsonData(tea) {
                 withCompoundScores,
                 finalScores
             },
-            baselineEffects,  // Add calculated baseline effects
+            baselineEffects: tea.expectedEffects,  // Add expected effects for comparison
             tcmProfile,       // Add TCM profile for reference
             originalExpectedEffects: tea.expectedEffects, // Add original expected effects for comparison
             finalScores
@@ -758,7 +687,7 @@ function generateJsonData(tea) {
             supportingEffects,
             additionalEffects,
             interactions: interactionsIdentified,
-            baselineEffects,  // Add calculated baseline effects
+            baselineEffects: tea.expectedEffects,  // Add expected effects for comparison
             tcmProfile,       // Add TCM profile for reference
             buildUpScores: {
                 withBaseScores,

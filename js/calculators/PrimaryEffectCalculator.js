@@ -5,6 +5,29 @@
 import TeaGlobalMapping from '../props/TeaGlobalMapping.js';
 import { validateObject } from '../utils/helpers.js';
 
+// Define tea type specific effects
+const teaTypeEffects = {
+  'white': { 'peaceful': 1.8, 'soothing': 1.5 },
+  'green': { 'soothing': 1.5, 'clarifying': 1.3 },
+  'oolong': { 'elevating': 1.5, 'balancing': 1.2 },
+  'black': { 'revitalizing': 1.8, 'awakening': 1.5 },
+  'puerh': { 'centering': 1.8, 'stabilizing': 1.5 }
+};
+
+// Define common effect pairings for better supporting effect prediction
+const effectPairings = {
+  'soothing': ['clarifying', 'peaceful', 'restorative'],
+  'peaceful': ['soothing', 'restorative', 'elevating'],
+  'elevating': ['peaceful', 'awakening', 'clarifying'],
+  'nurturing': ['centering', 'comforting', 'balancing'],
+  'revitalizing': ['awakening', 'elevating', 'renewing'],
+  'centering': ['stabilizing', 'reflective', 'balancing'],
+  'balancing': ['peaceful', 'centering', 'clarifying'],
+  'awakening': ['revitalizing', 'elevating', 'clarifying'],
+  'clarifying': ['awakening', 'soothing', 'elevating'],
+  'stabilizing': ['centering', 'grounding', 'nurturing']
+};
+
 export class PrimaryEffectCalculator {
     constructor(config = {}) {
         this.config = config;
@@ -89,6 +112,13 @@ export class PrimaryEffectCalculator {
             }
         });
 
+        // Apply tea type specific boost
+        if (safeTea.type && teaTypeEffects[safeTea.type.toLowerCase()]) {
+            Object.entries(teaTypeEffects[safeTea.type.toLowerCase()]).forEach(([effect, boost]) => {
+                effectScores[effect] = (effectScores[effect] || 0) + boost;
+            });
+        }
+
         // 4. Select Dominant and Supporting Effects
         const sortedEffects = Object.entries(effectScores).sort((a, b) => b[1] - a[1]);
 
@@ -100,13 +130,38 @@ export class PrimaryEffectCalculator {
         const dominant = sortedEffects[0][0];
         let supporting = null;
 
-        // Find the next *different* effect with a positive score
-        for (let i = 1; i < sortedEffects.length; i++) {
-            if (sortedEffects[i][0] !== dominant && sortedEffects[i][1] > 0) {
-                // Only count as supporting if score is reasonably high (at least 50% of dominant score)
-                if (sortedEffects[i][1] > sortedEffects[0][1] * 0.5) {
-                    supporting = sortedEffects[i][0];
-                    break;
+        // Apply secondary effect bias based on common pairings
+        if (dominant && effectPairings[dominant]) {
+            effectPairings[dominant].forEach((effect, index) => {
+                // Boost likely secondary effects, with strongest boost to first option
+                const boost = 0.8 - (index * 0.2);
+                if (boost > 0) {
+                    effectScores[effect] = (effectScores[effect] || 0) + boost;
+                }
+            });
+            
+            // Re-sort after applying the bias
+            const updatedSortedEffects = Object.entries(effectScores).sort((a, b) => b[1] - a[1]);
+            
+            // Skip the dominant effect (which should still be first) when looking for supporting
+            for (let i = 1; i < updatedSortedEffects.length; i++) {
+                if (updatedSortedEffects[i][0] !== dominant && updatedSortedEffects[i][1] > 0) {
+                    // Only count as supporting if score is reasonably high
+                    if (updatedSortedEffects[i][1] > updatedSortedEffects[0][1] * 0.4) { // Lowered threshold to capture biased effects
+                        supporting = updatedSortedEffects[i][0];
+                        break;
+                    }
+                }
+            }
+        } else {
+            // Original supporting effect selection if no bias applied
+            for (let i = 1; i < sortedEffects.length; i++) {
+                if (sortedEffects[i][0] !== dominant && sortedEffects[i][1] > 0) {
+                    // Only count as supporting if score is reasonably high (at least 50% of dominant score)
+                    if (sortedEffects[i][1] > sortedEffects[0][1] * 0.5) {
+                        supporting = sortedEffects[i][0];
+                        break;
+                    }
                 }
             }
         }

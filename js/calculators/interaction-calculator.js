@@ -104,16 +104,6 @@ export class InteractionCalculator {
     const scores = {};
     
     if (tea && typeof tea === 'object') {
-      // Use expected effects if available
-      if (tea.expectedEffects) {
-        if (tea.expectedEffects.dominant) {
-          scores[tea.expectedEffects.dominant] = 9.5;
-        }
-        if (tea.expectedEffects.supporting) {
-          scores[tea.expectedEffects.supporting] = 7.5;
-        }
-      }
-      
       // Add L-theanine and caffeine based effects
       if (tea.lTheanineLevel !== undefined && tea.caffeineLevel !== undefined) {
         const ratio = tea.lTheanineLevel / tea.caffeineLevel;

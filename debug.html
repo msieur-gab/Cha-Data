@@ -932,7 +932,7 @@ supportingEffectThreshold: ${config.get('supportingEffectThreshold')}
                     trackScore('compound', effect, value);
                 });
                 
-                const processingScores = processingCalculator.calculateProcessingInfluence(tea.processingMethods);
+                const processingScores = processingCalculator.calculateProcessingInfluence(tea);
                 Object.entries(processingScores).forEach(([effect, value]) => {
                     trackScore('processing', effect, value);
                 });

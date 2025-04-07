@@ -95,6 +95,22 @@ export class TimingCalculator {
         // Calculate key ratios
         const lTheanineToCaffeineRatio = safeTea.lTheanineLevel / safeTea.caffeineLevel;
         
+        // Define the profile based on tea properties
+        let teaProfile = {
+            teaType: safeTea.type || 'unknown',
+            caffeineLevel: safeTea.caffeineLevel || 3,
+            lTheanineLevel: safeTea.lTheanineLevel || 3,
+            processingLevel: this._calculateProcessingLevel(safeTea.processingMethods || []),
+            season: safeTea.geography?.harvestSeason || this._getSeason(safeTea.geography?.harvestMonth),
+            timeOfDay: null, // Will be calculated
+            primaryEffects: [], // Remove reference to expectedEffects - let timing be based on actual calculated effects
+            geography: {
+                altitude: safeTea.geography?.altitude || 500,
+                humidity: safeTea.geography?.humidity || 60,
+                latitude: safeTea.geography?.latitude || 30
+            }
+        };
+        
         return {
             timeScores,
             timeRanges: bestTimeRanges,
@@ -315,48 +331,19 @@ export class TimingCalculator {
         // Simplified effect determination
         const effectScores = {};
         
-        // Base effects by tea type
-        switch (tea.type.toLowerCase()) {
-            case 'green':
-                effectScores.revitalizing = 4;
-                effectScores.soothing = 5;
-                effectScores.clarifying = 6;
-                break;
-            case 'black':
-                effectScores.revitalizing = 8;
-                effectScores.awakening = 7;
-                effectScores.nurturing = 5;
-                break;
-            case 'oolong':
-                effectScores.balancing = 7;
-                effectScores.elevating = 6;
-                effectScores.reflective = 5;
-                break;
-            case 'white':
-                effectScores.peaceful = 8;
-                effectScores.soothing = 6;
-                effectScores.reflective = 5;
-                break;
-            case 'puerh':
-                effectScores.centering = 7;
-                effectScores.stabilizing = 8;
-                effectScores.nurturing = 6;
-                break;
-            default:
-                effectScores.balancing = 5;
-        }
-        
-        // Adjust for caffeine/L-theanine ratio
-        const ratio = tea.lTheanineLevel / tea.caffeineLevel;
-        if (ratio > 1.5) {
-            // High L-theanine to caffeine promotes calming effects
-            effectScores.soothing = (effectScores.soothing || 0) + 3;
-            effectScores.peaceful = (effectScores.peaceful || 0) + 2;
-            effectScores.clarifying = (effectScores.clarifying || 0) + 2;
-        } else if (ratio < 0.8) {
-            // High caffeine to L-theanine promotes stimulating effects
-            effectScores.revitalizing = (effectScores.revitalizing || 0) + 3;
-            effectScores.awakening = (effectScores.awakening || 0) + 2;
+        // Base the scores on L-Theanine to Caffeine ratio instead
+        if (tea.lTheanineLevel !== undefined && tea.caffeineLevel !== undefined) {
+            const ratio = tea.lTheanineLevel / tea.caffeineLevel;
+            
+            if (ratio > 1.5) {
+                effectScores["peaceful"] = Math.min(10, tea.lTheanineLevel * 0.8);
+                effectScores["soothing"] = Math.min(10, tea.lTheanineLevel * 0.7);
+            }
+            
+            if (ratio < 1.0) {
+                effectScores["revitalizing"] = Math.min(10, tea.caffeineLevel * 0.9);
+                effectScores["awakening"] = Math.min(10, tea.caffeineLevel * 0.7);
+            }
         }
         
         // Use expected effects if provided
@@ -556,6 +543,66 @@ export class TimingCalculator {
         }
         
         return isRecommended ? "Optimal time based on tea properties" : "Less ideal time for consumption";
+    }
+    
+    // Calculate processing level based on processing methods
+    _calculateProcessingLevel(processingMethods) {
+        if (!processingMethods || !Array.isArray(processingMethods) || processingMethods.length === 0) {
+            return 5; // Default/medium processing level
+        }
+        
+        // Processing methods that indicate heavy processing
+        const heavyProcessing = [
+            'roasted', 'heavy-roast', 'charcoal-roasted', 'pile-fermented', 
+            'post-fermented', 'aged', 'compressed'
+        ];
+        
+        // Processing methods that indicate light processing
+        const lightProcessing = [
+            'steamed', 'sun-dried', 'minimal-processing', 'shade-grown', 
+            'withered', 'baked'
+        ];
+        
+        // Count occurrences of each processing type
+        const heavyCount = processingMethods.filter(method => 
+            heavyProcessing.some(heavy => method.toLowerCase().includes(heavy.toLowerCase()))
+        ).length;
+        
+        const lightCount = processingMethods.filter(method => 
+            lightProcessing.some(light => method.toLowerCase().includes(light.toLowerCase()))
+        ).length;
+        
+        // Calculate processing level (1-10 scale)
+        // 1-3: Light processing, 4-7: Medium processing, 8-10: Heavy processing
+        let processingLevel = 5; // Default medium
+        
+        if (heavyCount > lightCount) {
+            // More heavy processing methods
+            processingLevel = 7 + Math.min(heavyCount, 3);
+        } else if (lightCount > heavyCount) {
+            // More light processing methods
+            processingLevel = 4 - Math.min(lightCount, 3);
+        }
+        
+        return Math.max(1, Math.min(10, processingLevel));
+    }
+    
+    // Get season from harvest month
+    _getSeason(harvestMonth) {
+        if (!harvestMonth || typeof harvestMonth !== 'number') {
+            return 'spring'; // Default to spring
+        }
+        
+        // Northern hemisphere seasons
+        if (harvestMonth >= 3 && harvestMonth <= 5) {
+            return 'spring';
+        } else if (harvestMonth >= 6 && harvestMonth <= 8) {
+            return 'summer';
+        } else if (harvestMonth >= 9 && harvestMonth <= 11) {
+            return 'autumn';
+        } else {
+            return 'winter';
+        }
     }
 }
 

@@ -61,7 +61,6 @@
             transition: width 0.3s ease;
         }
         
-        .primary-progress { background-color: #4CAF50; }
         .final-progress { background-color: #2196F3; }
         
         button {
@@ -107,13 +106,6 @@
             <div class="stats-panel" id="stats-panel" style="display: none;">
                 <h3>Accuracy Summary</h3>
                 <div class="stats-row">
-                    <div class="stats-label">Primary Effects:</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill primary-progress" id="primary-progress" style="width: 0%">0%</div>
-                    </div>
-                    <div class="stats-value" id="primary-value">0/0</div>
-                </div>
-                <div class="stats-row">
                     <div class="stats-label">Final Effects:</div>
                     <div class="progress-bar">
                         <div class="progress-fill final-progress" id="final-progress" style="width: 0%">0%</div>
@@ -134,8 +126,6 @@
         // DOM elements
         const outputEl = document.getElementById('output');
         const statsPanel = document.getElementById('stats-panel');
-        const primaryProgress = document.getElementById('primary-progress');
-        const primaryValue = document.getElementById('primary-value');
         const finalProgress = document.getElementById('final-progress');
         const finalValue = document.getElementById('final-value');
         
@@ -213,16 +203,10 @@
         function updateStatsPanel(summary) {
             if (!summary) return;
             
-            const { totalTeas, primaryEffects, finalEffects } = summary;
+            const { totalTeas, finalEffects } = summary;
             
             // Show the stats panel
             statsPanel.style.display = 'block';
-            
-            // Update primary effects
-            const primaryPct = primaryEffects.bothMatchRate;
-            primaryProgress.style.width = `${primaryPct}%`;
-            primaryProgress.textContent = `${primaryPct}%`;
-            primaryValue.textContent = `${primaryEffects.bothMatches}/${totalTeas}`;
             
             // Update final effects
             const finalPct = finalEffects.bothMatchRate;

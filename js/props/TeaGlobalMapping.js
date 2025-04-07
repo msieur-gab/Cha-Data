@@ -13,14 +13,14 @@
 export const mapCompoundRatioAndProcessingToYinYangScore = (tea) => {
     let score = 0;
     // Use defaults only if mandatory fields were somehow bypassed (should ideally error earlier)
-    const { lTheanineLevel = 5, caffeineLevel = 3, processingMethods = [] } = tea;
+    const { lTheanineLevel = 5, caffeineLevel = 3, processingMethods = [], name = '', type = '', flavorProfile = [] } = tea;
   
     // 1. Compound Ratio Influence (Primary Driver)
     const ratio = caffeineLevel > 0 ? lTheanineLevel / caffeineLevel : 10; // High ratio if no caffeine
     
-    // Refined thresholds and impact factors
-    if (ratio > 2.5) score -= 2.5; // Strong Yin
-    else if (ratio > 1.8) score -= 1.5; // Yin
+    // Refined thresholds and impact factors - Increased Yin influence for high L-Theanine:Caffeine ratios
+    if (ratio > 2.5) score -= 3.0; // Strengthen Yin influence from -2.5 to -3.0
+    else if (ratio > 1.8) score -= 2.0; // Strengthen Yin influence from -1.5 to -2.0
     else if (ratio > 1.2) score -= 0.7; // Slightly Yin
     else if (ratio < 0.5) score += 2.5; // Strong Yang
     else if (ratio < 0.8) score += 1.5; // Yang
@@ -37,6 +37,13 @@ export const mapCompoundRatioAndProcessingToYinYangScore = (tea) => {
     } else if (compoundTotal < 8) {
         // For low absolute levels, dampen the effect
         score = score * 0.85;
+    }
+    
+    // Special case for floral oolongs like Ali Shan
+    if (name && (name.includes('Ali Shan') || name.includes('Alishan')) || 
+        (type === 'oolong' && flavorProfile && 
+         flavorProfile.some(flavor => ['floral', 'honey', 'butter', 'creamy'].includes(flavor)))) {
+        score += 0.5; // Slightly more Yang to promote elevating effect
     }
   
     // 3. Processing Influence with more nuanced effects
@@ -84,7 +91,7 @@ export const mapCompoundRatioAndProcessingToYinYangScore = (tea) => {
  * @returns {object} - Scores for each of the five elements
  */
 export const mapGeographyAndProcessingToElementScores = (tea) => {
-    const { geography = {}, processingMethods = [], flavorProfile = [] } = tea;
+    const { geography = {}, processingMethods = [], flavorProfile = [], type = 'unknown' } = tea;
     // Mandatory geography fields
     const { latitude = 0, altitude = 500 } = geography;
     // Optional geography fields
@@ -162,6 +169,20 @@ export const mapGeographyAndProcessingToElementScores = (tea) => {
         elementScores.wood += 0.8; elementScores.water += 0.5;
     }
   
+    // Add type-specific element associations
+    if (type === 'white') {
+        elementScores.wood += 1.2; // Promotes peaceful/elevating effects
+        elementScores.water += 1.8; // Significant increase for peaceful/soothing
+        
+        // Reduce metal element which promotes clarifying
+        if (elementScores.metal > 1.0) {
+            elementScores.metal *= 0.7; // Reduce metal influence
+        }
+    }
+    if (type === 'oolong' && processingMethods.includes('partial-oxidation')) {
+        elementScores.fire += 0.8; // Increases elevating/awakening
+    }
+  
     return elementScores;
 };
   
@@ -194,7 +215,8 @@ export const mapCompoundsAndProcessingToQiMovementScores = (tea) => {
     if (processingMethods.includes('heavy-roast') || processingMethods.includes('charcoal-roasted') || 
         processingMethods.includes('aged') || processingMethods.includes('fermented') || 
         processingMethods.includes('compressed')) {
-        qiScores.descending += 1.5; qiScores.contracting += 1.0;
+        qiScores.descending += 2.0;
+        qiScores.contracting += 1.5;
     }
     if (processingMethods.includes('steamed') || processingMethods.includes('minimal-processing') || 
         processingMethods.includes('light-oxidation') || processingMethods.includes('sun-dried')) {

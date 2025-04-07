@@ -183,7 +183,236 @@ export const teaDatabase = [
             dominant: "centering",
             supporting: "stabilizing"
         }
+    },
+    // 1. Mi Lan Xiang Dan Cong Oolong (Honey Orchid Fragrance)
+{
+    name: "Mi Lan Xiang Dan Cong",
+    originalName: "蜜兰香单枞 (Mì Lán Xiāng Dān Cōng)",
+    type: "oolong",
+    origin: "Phoenix Mountain, Guangdong, China",
+    caffeineLevel: 5.0,
+    lTheanineLevel: 4.2,
+    flavorProfile: ["honey", "orchid", "fruity", "floral", "roasted", "tropical"],
+    processingMethods: ["withered", "partial-oxidation", "medium-roast", "hand-rolled"],
+    geography: {
+        altitude: 1200,
+        humidity: 78,
+        latitude: 23.73,
+        longitude: 113.75,
+        harvestMonth: 4
+    },
+    expectedEffects: {
+        dominant: "elevating",
+        supporting: "awakening"
     }
+},
+
+// 2. Moonlight Beauty White Tea
+{
+    name: "Moonlight Beauty",
+    originalName: "月光美人 (Yuè Guāng Měi Rén)",
+    type: "white",
+    origin: "Jinggu, Yunnan, China",
+    caffeineLevel: 3.5,
+    lTheanineLevel: 7.2,
+    flavorProfile: ["honey", "apricot", "sweet", "hay", "orchid", "herbaceous"],
+    processingMethods: ["withered", "sun-dried", "minimal-processing"],
+    geography: {
+        altitude: 1600,
+        humidity: 72,
+        latitude: 23.5,
+        longitude: 100.7,
+        harvestMonth: 3
+    },
+    expectedEffects: {
+        dominant: "peaceful",
+        supporting: "reflective"
+    }
+},
+
+// 3. First Flush Darjeeling
+{
+    name: "First Flush Darjeeling",
+    originalName: "First Flush Darjeeling",
+    type: "black",
+    origin: "Darjeeling, West Bengal, India",
+    caffeineLevel: 4.8,
+    lTheanineLevel: 3.5,
+    flavorProfile: ["muscatel", "floral", "citrus", "fresh", "vegetal", "woody"],
+    processingMethods: ["withered", "rolled", "light-oxidation", "dried"],
+    geography: {
+        altitude: 2000,
+        humidity: 70,
+        latitude: 27.05,
+        longitude: 88.26,
+        harvestMonth: 3
+    },
+    expectedEffects: {
+        dominant: "clarifying",
+        supporting: "elevating"
+    }
+},
+
+// 4. Matcha Ceremonial Grade
+{
+    name: "Ceremonial Matcha",
+    originalName: "抹茶 (Matcha)",
+    type: "green",
+    origin: "Uji, Kyoto, Japan",
+    caffeineLevel: 6.0,
+    lTheanineLevel: 9.5,
+    flavorProfile: ["umami", "sweet", "grass", "marine", "vegetal", "creamy"],
+    processingMethods: ["shade-grown", "steamed", "stone-ground", "minimal-processing"],
+    geography: {
+        altitude: 200,
+        humidity: 75,
+        latitude: 34.88,
+        longitude: 135.80,
+        harvestMonth: 5
+    },
+    expectedEffects: {
+        dominant: "clarifying",
+        supporting: "centering"
+    }
+},
+
+// 5. Lapsang Souchong
+{
+    name: "Lapsang Souchong",
+    originalName: "正山小种 (Zhèng Shān Xiǎo Zhǒng)",
+    type: "black",
+    origin: "Wuyi Mountains, Fujian, China",
+    caffeineLevel: 5.5,
+    lTheanineLevel: 3.2,
+    flavorProfile: ["smoky", "pine", "tarry", "woody", "roasted", "dried fruit"],
+    processingMethods: ["withered", "smoked", "full-oxidation", "pine-fired"],
+    geography: {
+        altitude: 800,
+        humidity: 80,
+        latitude: 27.72,
+        longitude: 117.67,
+        harvestMonth: 5
+    },
+    expectedEffects: {
+        dominant: "nurturing",
+        supporting: "stabilizing"
+    }
+},
+
+// 6. Sheng Puerh (Raw, Young)
+{
+    name: "Young Sheng Puerh",
+    originalName: "生普洱 (Shēng Pǔ'ěr)",
+    type: "puerh",
+    origin: "Xishuangbanna, Yunnan, China",
+    caffeineLevel: 4.5,
+    lTheanineLevel: 3.8,
+    flavorProfile: ["bitter", "astringent", "floral", "grassy", "fruity", "mineral"],
+    processingMethods: ["withered", "pan-fired", "sun-dried", "compressed"],
+    geography: {
+        altitude: 1500,
+        humidity: 80,
+        latitude: 22.0,
+        longitude: 100.8,
+        harvestMonth: 4
+    },
+    expectedEffects: {
+        dominant: "awakening",
+        supporting: "clarifying"
+    }
+},
+
+// 7. Tie Guan Yin (Traditional Style)
+{
+    name: "Traditional Tie Guan Yin",
+    originalName: "铁观音 (Tiě Guān Yīn)",
+    type: "oolong",
+    origin: "Anxi, Fujian, China",
+    caffeineLevel: 4.5,
+    lTheanineLevel: 5.2,
+    flavorProfile: ["roasted", "nutty", "woody", "minerally", "caramel", "orchid"],
+    processingMethods: ["withered", "bruised", "partial-oxidation", "medium-roast"],
+    geography: {
+        altitude: 700,
+        humidity: 75,
+        latitude: 25.06,
+        longitude: 117.67,
+        harvestMonth: 5
+    },
+    expectedEffects: {
+        dominant: "balancing",
+        supporting: "centering"
+    }
+},
+
+// 8. Genmaicha
+{
+    name: "Genmaicha",
+    originalName: "玄米茶 (Genmaicha)",
+    type: "green",
+    origin: "Shizuoka, Japan",
+    caffeineLevel: 3.0,
+    lTheanineLevel: 4.5,
+    flavorProfile: ["toasted", "nutty", "grass", "cereal", "sweet", "vegetal"],
+    processingMethods: ["steamed", "dried", "mixed-with-rice"],
+    geography: {
+        altitude: 400,
+        humidity: 72,
+        latitude: 34.97,
+        longitude: 138.38,
+        harvestMonth: 5
+    },
+    expectedEffects: {
+        dominant: "comforting",
+        supporting: "grounding"
+    }
+},
+
+// 9. Kenyan Purple Tea
+{
+    name: "Kenyan Purple Tea",
+    originalName: "Kenyan Purple Tea",
+    type: "purple",
+    origin: "Nandi Hills, Kenya",
+    caffeineLevel: 3.8,
+    lTheanineLevel: 6.2,
+    flavorProfile: ["fruity", "sweet", "floral", "berries", "mild", "smooth"],
+    processingMethods: ["withered", "light-oxidation", "rolled", "dried"],
+    geography: {
+        altitude: 2100,
+        humidity: 65,
+        latitude: 0.33,
+        longitude: 35.17,
+        harvestMonth: 6
+    },
+    expectedEffects: {
+        dominant: "restorative",
+        supporting: "balancing"
+    }
+},
+
+// 10. Oriental Beauty (Dong Fang Mei Ren)
+{
+    name: "Oriental Beauty",
+    originalName: "东方美人 (Dōng Fāng Měi Rén)",
+    type: "oolong",
+    origin: "Hsinchu, Taiwan",
+    caffeineLevel: 3.5,
+    lTheanineLevel: 4.8,
+    flavorProfile: ["honey", "peach", "muscat", "wood", "spice", "orchid"],
+    processingMethods: ["withered", "bug-bitten", "oxidized", "light-roast"],
+    geography: {
+        altitude: 800,
+        humidity: 80,
+        latitude: 24.83,
+        longitude: 121.02,
+        harvestMonth: 6
+    },
+    expectedEffects: {
+        dominant: "elevating",
+        supporting: "peaceful"
+    }
+}
 ];
 
 export default teaDatabase;

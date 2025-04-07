@@ -2,6 +2,8 @@
 // Handles calculations related to processing method influence on tea effects
 
 import { normalizeString, validateObject, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
+// Add TCM mapping imports
+import * as TeaGlobalMapping from '../props/TeaGlobalMapping.js';
 
 export class ProcessingCalculator {
   constructor(config, processingInfluences) {
@@ -71,7 +73,7 @@ export class ProcessingCalculator {
     
     const processingMethods = tea.processingMethods;
     const processingAnalysis = this.getProcessingAnalysis(tea);
-    const processingInfluence = this.calculateProcessingInfluence(processingMethods);
+    const processingInfluence = this.calculateProcessingInfluence(tea);
     const methodDetails = this.getProcessingDetails(processingMethods);
     
     return {
@@ -201,80 +203,123 @@ export class ProcessingCalculator {
     };
   }
   
-  // Calculate the influence of processing methods on tea effects
-  calculateProcessingInfluence(processingMethods) {
-    if (!Array.isArray(processingMethods) || processingMethods.length === 0) {
+  // Calculate processing influence on effects
+  calculateProcessingInfluence(tea) {
+    // Extract processingMethods from tea if it's the full tea object
+    const processingMethods = Array.isArray(tea) ? tea : 
+      (tea && tea.processingMethods ? tea.processingMethods : []);
+    
+    if (!processingMethods || !Array.isArray(processingMethods) || processingMethods.length === 0) {
       return {};
     }
     
+    // Create initial scores object
     const scores = {};
     
-    // If we have pre-defined processing influences, use those
-    if (this.processingInfluences && typeof this.processingInfluences === 'object') {
-      // For each processing method
-      processingMethods.forEach(method => {
-        // Extract base method and intensity if specified
-        const [baseMethod, intensity] = this.parseProcessingMethod(method);
-        
-        // Find the influence for this method
-        const influence = this.processingInfluences[baseMethod];
-        
-        if (influence) {
-          // Get intensity modifier if available, otherwise use 1.0
-          const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
-          
-          // Apply the influence with intensity scaling
-          Object.keys(influence).forEach(effect => {
-            scores[effect] = (scores[effect] || 0) + (influence[effect] * intensityModifier);
-          });
-        }
-      });
-    } else {
-      // Fallback to simple rules if no predefined influences
-      this.applyDefaultProcessingRules(processingMethods, scores);
+    // Calculate Qi Movement scores based on compounds and processing
+    if (tea && typeof tea === 'object' && tea.caffeineLevel !== undefined && tea.lTheanineLevel !== undefined) {
+      const qiScores = TeaGlobalMapping.mapCompoundsAndProcessingToQiMovementScores(tea);
+      const primaryQiMovement = Object.keys(qiScores).length > 0
+        ? Object.entries(qiScores).sort((a, b) => b[1] - a[1])[0][0]
+        : 'balanced'; // Default Qi movement
+      
+      // Apply TCM effect mapping based on Qi Movement
+      const qiMapKey = primaryQiMovement === 'balanced' ? 'balancedQi' : primaryQiMovement;
+      if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[qiMapKey]) {
+        TeaGlobalMapping.tcmToPrimaryEffectMap[qiMapKey].forEach(([effect, strength]) => {
+          scores[effect] = (scores[effect] || 0) + strength;
+        });
+      }
     }
     
-    // Ensure all scores are within valid range
-    Object.keys(scores).forEach(key => {
-      scores[key] = Math.min(10, Math.max(0, scores[key]));
-    });
+    // Apply default processing rules
+    this.applyDefaultProcessingRules(processingMethods, scores);
+    
+    // Apply custom processing influences from dataset
+    for (const method of processingMethods) {
+      // Parse method to handle intensity qualifiers
+      const { baseMethod, intensity } = this.parseProcessingMethod(method);
+      
+      // Calculate intensity modifier
+      const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
+      
+      // Apply influence from dataset if available
+      if (this.processingInfluences[baseMethod]) {
+        const influences = this.processingInfluences[baseMethod];
+        
+        for (const effectId in influences) {
+          if (influences.hasOwnProperty(effectId)) {
+            const baseInfluence = influences[effectId];
+            
+            // Apply intensity modifier to base influence
+            const modifiedInfluence = baseInfluence * intensityModifier;
+            
+            // Update scores
+            scores[effectId] = (scores[effectId] || 0) + modifiedInfluence;
+          }
+        }
+      }
+    }
     
     return scores;
   }
   
-  /**
-   * Parse a processing method string to extract base method and intensity
-   * @param {string} method - Processing method (e.g., "light-roast", "heavy-oxidation")
-   * @returns {Array} - [baseMethod, intensity]
-   */
+  // Parse processing method to handle intensity qualifiers
   parseProcessingMethod(method) {
     if (!method || typeof method !== 'string') {
-      return ['unknown', null];
+      return { baseMethod: 'unknown', intensity: null };
+    }
+
+    method = method.toLowerCase().trim();
+    
+    // First, check for combined method+intensity format (e.g. "heavy-roast")
+    const combinedMatch = method.match(/^(light|medium|heavy|deep|full|charcoal|short|vintage|post)-(.+)$/);
+    if (combinedMatch) {
+      const intensity = combinedMatch[1];
+      const baseMethod = combinedMatch[2];
+      return { baseMethod, intensity };
     }
     
-    const methodLower = method.toLowerCase();
+    // Check for "X processed" format, like "lightly processed"
+    const processedMatch = method.match(/^(light|medium|heavy|deep|full)(?:ly)?[ -]processed$/);
+    if (processedMatch) {
+      return { baseMethod: 'processed', intensity: processedMatch[1] };
+    }
     
-    // Check for intensity prefixes
-    const intensityPrefixes = ['light-', 'medium-', 'heavy-', 'deep-', 'full-', 'charcoal-', 'post-'];
-    let intensity = null;
-    let baseMethod = methodLower;
-    
-    for (const prefix of intensityPrefixes) {
-      if (methodLower.startsWith(prefix)) {
-        intensity = prefix.slice(0, -1); // Remove trailing hyphen
-        baseMethod = methodLower.substring(prefix.length);
-        break;
+    // Handle known intensity qualifiers within the method name
+    if (method.includes('light')) {
+      // Common processing methods that might include "light" qualifier
+      if (method.includes('roast')) {
+        return { baseMethod: 'roasted', intensity: 'light' };
+      }
+      if (method.includes('steam')) {
+        return { baseMethod: 'steamed', intensity: 'light' };
+      }
+      if (method.includes('ferment')) {
+        return { baseMethod: 'fermented', intensity: 'light' };
+      }
+      if (method.includes('oxidation') || method.includes('oxidized')) {
+        return { baseMethod: 'oxidation', intensity: 'light' };
+      }
+    }
+    if (method.includes('heavy') || method.includes('deep')) {
+      // Common processing methods that might include "heavy/deep" qualifier
+      if (method.includes('roast')) {
+        return { baseMethod: 'roasted', intensity: 'heavy' };
+      }
+      if (method.includes('steam')) {
+        return { baseMethod: 'steamed', intensity: 'deep' };
+      }
+      if (method.includes('ferment')) {
+        return { baseMethod: 'fermented', intensity: 'heavy' };
+      }
+      if (method.includes('oxidation') || method.includes('oxidized')) {
+        return { baseMethod: 'oxidation', intensity: 'heavy' };
       }
     }
     
-    // Special handling for specific methods
-    if (baseMethod === 'roast' || baseMethod === 'roasted') {
-      baseMethod = 'roasted';
-    } else if (baseMethod === 'oxidized' || baseMethod === 'oxidised') {
-      baseMethod = 'oxidation';
-    }
-    
-    return [baseMethod, intensity];
+    // No intensity qualifier found, return base method only
+    return { baseMethod: method, intensity: null };
   }
   
   /**
@@ -284,12 +329,28 @@ export class ProcessingCalculator {
    * @returns {number} - Modifier factor
    */
   getIntensityModifier(baseMethod, intensity) {
-    if (!intensity || !this.processingIntensityModifiers[baseMethod]) {
-      return 1.0; // Default modifier
+    // Default intensity modifier is 1.0
+    if (!intensity) return 1.0;
+    
+    // Check if we have a specific intensity mapping for this method
+    if (this.processingIntensityModifiers[baseMethod] && 
+        this.processingIntensityModifiers[baseMethod][intensity]) {
+      return this.processingIntensityModifiers[baseMethod][intensity];
     }
     
-    const intensityModifiers = this.processingIntensityModifiers[baseMethod];
-    return intensityModifiers[intensity] || 1.0;
+    // Generic intensity modifiers if no specific mapping is found
+    switch (intensity) {
+      case 'light': return 0.7;
+      case 'medium': return 1.0;
+      case 'heavy': return 1.3;
+      case 'deep': return 1.3;
+      case 'full': return 1.5;
+      case 'charcoal': return 1.8;
+      case 'post': return 1.6;
+      case 'short': return 0.7;
+      case 'vintage': return 1.6;
+      default: return 1.0;
+    }
   }
   
   /**
@@ -299,7 +360,7 @@ export class ProcessingCalculator {
    */
   applyDefaultProcessingRules(processingMethods, scores) {
     processingMethods.forEach(method => {
-      const [baseMethod, intensity] = this.parseProcessingMethod(method);
+      const { baseMethod, intensity } = this.parseProcessingMethod(method);
       const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
       
       // Apply default rules based on method
