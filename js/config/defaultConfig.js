@@ -6,16 +6,16 @@ export const defaultConfig = {
   normalizeScores: true,
   dominantEffectThreshold: 7.0,
   supportingEffectThreshold: 3.5,
-  interactionStrengthFactor: 0.6,
+  interactionStrengthFactor: 0.8,
   geographicalInfluenceFactor: 0.7,
   
   // Component weights for different aspects of tea analysis
   componentWeights: {
-    base: 0.45,         // Increased from 0.35
-    compounds: 0.15,    // Reduced from 0.18
-    processing: 0.18,   // Slightly reduced from 0.20
-    geography: 0.12,    // Slightly reduced from 0.15
-    flavors: 0.10       // Reduced from 0.12
+    teaType: 0.35,      // REDUCED from 0.45 - Tea type base effects
+    compounds: 0.15,    // KEPT at 0.15 - Compound influence
+    processing: 0.25,   // INCREASED from 0.18 - Processing methods
+    geography: 0.15,    // INCREASED from 0.12 - Geographical factors
+    flavors: 0.15       // INCREASED from 0.10 - Flavor profiles
   },
   
   // Thresholds for compound ratio analysis

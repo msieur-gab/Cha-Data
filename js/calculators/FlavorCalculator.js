@@ -2,11 +2,13 @@
 // Handles calculations related to flavor influence on tea effects
 
 import { validateObject, sortByProperty, getTopItems } from '../utils/helpers.js';
+import { effectMapping } from '../props/EffectMapping.js';
 
 export class FlavorCalculator {
   constructor(config, flavorInfluences) {
     this.config = config;
     this.flavorInfluences = flavorInfluences || {};
+    this.effectMapping = effectMapping;
   }
   
   // Main calculate method following our standardized pattern
@@ -117,6 +119,7 @@ export class FlavorCalculator {
   serialize(inference) {
     if (!inference) {
       return {
+        flavorScores: {},
         flavor: {
           profile: {
             description: 'No flavor data available',
@@ -130,6 +133,9 @@ export class FlavorCalculator {
         }
       };
     }
+
+    // Calculate flavor scores
+    const flavorScores = this.calculateFlavorScores(inference);
 
     // Create the profile section
     const profile = {
@@ -152,6 +158,7 @@ export class FlavorCalculator {
     }));
 
     return {
+      flavorScores,
       flavor: {
         profile,
         categories,
@@ -187,6 +194,64 @@ export class FlavorCalculator {
         });
       });
     });
+    
+    // Apply special boosts for specific flavor combinations
+    
+    // For umami/marine flavors, boost focusing effect
+    if (flavorProfile.some(f => ["umami", "marine"].includes(f))) {
+      scores["focusing"] = (scores["focusing"] || 0) + 4.0;
+    }
+    
+    // Boost elevating effect for floral/fruity flavors
+    if (flavorProfile.some(f => ["floral", "fruity", "orchid", "honey", "apricot", "peach"].includes(f))) {
+      scores["elevating"] = (scores["elevating"] || 0) + 5.5;
+    }
+    
+    // Further boost for multiple floral notes
+    const floralCount = flavorProfile.filter(f => 
+      ["floral", "orchid", "jasmine", "rose"].includes(f)).length;
+    if (floralCount >= 2) {
+      scores["elevating"] = (scores["elevating"] || 0) + 3.0;
+    }
+    
+    // Add comforting boost for woody/earthy flavors
+    if (flavorProfile.some(f => ["woody", "nutty", "roasted", "earthy"].includes(f))) {
+      scores["comforting"] = (scores["comforting"] || 0) + 4.5;
+    }
+    
+    // Add missing comforting effect for toasty/nutty flavors
+    if (flavorProfile.some(f => ["toasted", "nutty", "cereal", "baked", "grain"].includes(f))) {
+      scores["comforting"] = (scores["comforting"] || 0) + 6.5;
+    }
+    
+    // Create restorative effect for unique profiles
+    if (flavorProfile.includes("fruity") && 
+        flavorProfile.some(f => ["berries", "berry", "antioxidant"].includes(f))) {
+      scores["restorative"] = (scores["restorative"] || 0) + 6.0;
+    }
+    
+    // Boost energizing effect for brisk and astringent profiles
+    if (flavorProfile.some(f => ["brisk", "astringent", "bright"].includes(f))) {
+      scores["energizing"] = (scores["energizing"] || 0) + 5.0;
+    }
+    
+    // Map smokiness to comforting and grounding
+    if (flavorProfile.some(f => ["smoky", "tarry", "pine", "charcoal"].includes(f))) {
+      scores["comforting"] = (scores["comforting"] || 0) + 5.5;
+      scores["grounding"] = (scores["grounding"] || 0) + 3.5;
+    }
+    
+    // Map minerality to harmonizing and grounding
+    if (flavorProfile.some(f => ["mineral", "minerally", "rocks", "wet-stone"].includes(f))) {
+      scores["harmonizing"] = (scores["harmonizing"] || 0) + 3.2;
+      scores["grounding"] = (scores["grounding"] || 0) + 2.5;
+    }
+    
+    // Map malty notes to energizing but also grounding
+    if (flavorProfile.some(f => ["malt", "malty", "bread", "biscuit"].includes(f))) {
+      scores["energizing"] = (scores["energizing"] || 0) + 3.5;
+      scores["grounding"] = (scores["grounding"] || 0) + 2.5;
+    }
     
     return scores;
   }
@@ -301,6 +366,95 @@ export class FlavorCalculator {
       flavorCount,
       flavorCategories
     };
+  }
+
+  calculateFlavorScores(tea) {
+    const flavorScores = {};
+    const safeTea = {
+        flavor: tea.flavor || [],
+        processing: tea.processing || []
+    };
+
+    // Helper function to add flavor scores
+    const addFlavorScore = (effect, score) => {
+        flavorScores[effect] = (flavorScores[effect] || 0) + score;
+    };
+
+    // Process each flavor
+    safeTea.flavor.forEach(flavor => {
+        switch (flavor) {
+            case 'umami':
+                addFlavorScore("focusing", 2.5);
+                addFlavorScore("harmonizing", 1.5);
+                break;
+            case 'sweet':
+                addFlavorScore("comforting", 2.0);
+                addFlavorScore("harmonizing", 1.5);
+                break;
+            case 'bitter':
+                addFlavorScore("focusing", 2.0);
+                addFlavorScore("energizing", 1.5);
+                break;
+            case 'astringent':
+                addFlavorScore("focusing", 2.0);
+                addFlavorScore("grounding", 1.5);
+                break;
+            case 'floral':
+                addFlavorScore("elevating", 2.5);
+                addFlavorScore("harmonizing", 1.5);
+                break;
+            case 'fruity':
+                addFlavorScore("elevating", 2.0);
+                addFlavorScore("comforting", 1.5);
+                break;
+            case 'woody':
+                addFlavorScore("grounding", 2.5);
+                addFlavorScore("comforting", 1.5);
+                break;
+            case 'earthy':
+                addFlavorScore("grounding", 2.5);
+                addFlavorScore("harmonizing", 1.5);
+                break;
+            case 'spicy':
+                addFlavorScore("energizing", 2.0);
+                addFlavorScore("elevating", 1.5);
+                break;
+            case 'roasty':
+                addFlavorScore("grounding", 2.0);
+                addFlavorScore("comforting", 1.5);
+                break;
+            case 'smoky':
+                addFlavorScore("grounding", 2.5);
+                addFlavorScore("focusing", 1.5);
+                break;
+            case 'marine':
+                addFlavorScore("focusing", 2.0);
+                addFlavorScore("calming", 1.5);
+                break;
+            case 'mineral':
+                addFlavorScore("grounding", 2.0);
+                addFlavorScore("focusing", 1.5);
+                break;
+        }
+    });
+
+    // Apply processing-specific flavor adjustments
+    if (safeTea.processing.includes('shade-grown')) {
+        addFlavorScore("focusing", 1.5);
+        addFlavorScore("calming", 1.0);
+    }
+
+    if (safeTea.processing.includes('heavy-roast')) {
+        addFlavorScore("grounding", 2.0);
+        addFlavorScore("comforting", 1.5);
+    }
+
+    // Normalize scores
+    Object.keys(flavorScores).forEach(effect => {
+        flavorScores[effect] = Math.min(10, Math.max(0, flavorScores[effect]));
+    });
+
+    return flavorScores;
   }
 }
 

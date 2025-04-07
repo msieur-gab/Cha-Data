@@ -20,8 +20,8 @@ export const teaDatabase = [
             harvestMonth: 4   // April harvest
         },
         expectedEffects: {
-            dominant: "soothing",
-            supporting: "clarifying"
+            dominant: "elevating",
+            supporting: "harmonizing"
         }
     },
     
@@ -43,8 +43,8 @@ export const teaDatabase = [
             harvestMonth: 5   // May harvest (spring)
         },
         expectedEffects: {
-            dominant: "awakening",
-            supporting: "balancing"
+            dominant: "energizing",
+            supporting: "harmonizing"
         }
     },
     
@@ -66,8 +66,8 @@ export const teaDatabase = [
             harvestMonth: 5   // Late spring harvest
         },
         expectedEffects: {
-            dominant: "nurturing",
-            supporting: "centering"
+            dominant: "comforting",
+            supporting: "grounding"
         }
     },
 
@@ -88,8 +88,8 @@ export const teaDatabase = [
         "harvestMonth": 6
         },
         "expectedEffects": {
-        "dominant": "balancing",
-        "supporting": "peaceful"
+        "dominant": "harmonizing",
+        "supporting": "calming"
         }
         },
     
@@ -112,7 +112,7 @@ export const teaDatabase = [
         },
         expectedEffects: {
             dominant: "elevating",
-            supporting: "peaceful"
+            supporting: "calming"
         }
     },
     
@@ -134,8 +134,8 @@ export const teaDatabase = [
             harvestMonth: 6   // Summer harvest (second flush)
         },
         expectedEffects: {
-            dominant: "revitalizing",
-            supporting: "awakening"
+            dominant: "energizing",
+            supporting: "focusing"
         }
     },
     
@@ -157,8 +157,8 @@ export const teaDatabase = [
             harvestMonth: 3   // Early spring harvest
         },
         expectedEffects: {
-            dominant: "peaceful",
-            supporting: "soothing"
+            dominant: "calming",
+            supporting: "restorative"
         }
     },
     
@@ -180,8 +180,8 @@ export const teaDatabase = [
             harvestMonth: 4   // Spring harvest
         },
         expectedEffects: {
-            dominant: "centering",
-            supporting: "stabilizing"
+            dominant: "grounding",
+            supporting: "harmonizing"
         }
     },
     // 1. Mi Lan Xiang Dan Cong Oolong (Honey Orchid Fragrance)
@@ -203,7 +203,7 @@ export const teaDatabase = [
     },
     expectedEffects: {
         dominant: "elevating",
-        supporting: "awakening"
+        supporting: "energizing"
     }
 },
 
@@ -225,8 +225,8 @@ export const teaDatabase = [
         harvestMonth: 3
     },
     expectedEffects: {
-        dominant: "peaceful",
-        supporting: "reflective"
+        dominant: "calming",
+        supporting: "restorative"
     }
 },
 
@@ -248,7 +248,7 @@ export const teaDatabase = [
         harvestMonth: 3
     },
     expectedEffects: {
-        dominant: "clarifying",
+        dominant: "focusing",
         supporting: "elevating"
     }
 },
@@ -271,8 +271,8 @@ export const teaDatabase = [
         harvestMonth: 5
     },
     expectedEffects: {
-        dominant: "clarifying",
-        supporting: "centering"
+        dominant: "focusing",
+        supporting: "harmonizing"
     }
 },
 
@@ -294,8 +294,8 @@ export const teaDatabase = [
         harvestMonth: 5
     },
     expectedEffects: {
-        dominant: "nurturing",
-        supporting: "stabilizing"
+        dominant: "comforting",
+        supporting: "grounding"
     }
 },
 
@@ -317,8 +317,8 @@ export const teaDatabase = [
         harvestMonth: 4
     },
     expectedEffects: {
-        dominant: "awakening",
-        supporting: "clarifying"
+        dominant: "energizing",
+        supporting: "focusing"
     }
 },
 
@@ -340,8 +340,8 @@ export const teaDatabase = [
         harvestMonth: 5
     },
     expectedEffects: {
-        dominant: "balancing",
-        supporting: "centering"
+        dominant: "harmonizing",
+        supporting: "grounding"
     }
 },
 
@@ -368,28 +368,7 @@ export const teaDatabase = [
     }
 },
 
-// 9. Kenyan Purple Tea
-{
-    name: "Kenyan Purple Tea",
-    originalName: "Kenyan Purple Tea",
-    type: "purple",
-    origin: "Nandi Hills, Kenya",
-    caffeineLevel: 3.8,
-    lTheanineLevel: 6.2,
-    flavorProfile: ["fruity", "sweet", "floral", "berries", "mild", "smooth"],
-    processingMethods: ["withered", "light-oxidation", "rolled", "dried"],
-    geography: {
-        altitude: 2100,
-        humidity: 65,
-        latitude: 0.33,
-        longitude: 35.17,
-        harvestMonth: 6
-    },
-    expectedEffects: {
-        dominant: "restorative",
-        supporting: "balancing"
-    }
-},
+
 
 // 10. Oriental Beauty (Dong Fang Mei Ren)
 {
@@ -410,7 +389,7 @@ export const teaDatabase = [
     },
     expectedEffects: {
         dominant: "elevating",
-        supporting: "peaceful"
+        supporting: "harmonizing"
     }
 }
 ];

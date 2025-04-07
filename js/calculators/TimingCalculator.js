@@ -336,13 +336,13 @@ export class TimingCalculator {
             const ratio = tea.lTheanineLevel / tea.caffeineLevel;
             
             if (ratio > 1.5) {
-                effectScores["peaceful"] = Math.min(10, tea.lTheanineLevel * 0.8);
-                effectScores["soothing"] = Math.min(10, tea.lTheanineLevel * 0.7);
+                effectScores["peaceful"] = Math.min(10, tea.lTheanineLevel * 0.6);
+                effectScores["soothing"] = Math.min(10, tea.lTheanineLevel * 0.5);
             }
             
             if (ratio < 1.0) {
-                effectScores["revitalizing"] = Math.min(10, tea.caffeineLevel * 0.9);
-                effectScores["awakening"] = Math.min(10, tea.caffeineLevel * 0.7);
+                effectScores["revitalizing"] = Math.min(10, tea.caffeineLevel * 0.7);
+                effectScores["awakening"] = Math.min(10, tea.caffeineLevel * 0.5);
             }
         }
         

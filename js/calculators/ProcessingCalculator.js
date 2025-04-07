@@ -4,6 +4,7 @@
 import { normalizeString, validateObject, getTopItems, sortByProperty, categorizeByKeywords } from '../utils/helpers.js';
 // Add TCM mapping imports
 import * as TeaGlobalMapping from '../props/TeaGlobalMapping.js';
+import { effectMapping } from '../props/EffectMapping.js';
 
 export class ProcessingCalculator {
   constructor(config, processingInfluences) {
@@ -47,6 +48,8 @@ export class ProcessingCalculator {
           'vintage': 1.6 // > 15 years
       }
     };
+
+    this.effectMapping = effectMapping;
   }
   
   // Main calculate method following standardized calculator pattern
@@ -73,7 +76,7 @@ export class ProcessingCalculator {
     
     const processingMethods = tea.processingMethods;
     const processingAnalysis = this.getProcessingAnalysis(tea);
-    const processingInfluence = this.calculateProcessingInfluence(tea);
+    const processingInfluence = this.calculateProcessingScores(tea);
     const methodDetails = this.getProcessingDetails(processingMethods);
     
     return {
@@ -162,106 +165,97 @@ export class ProcessingCalculator {
   serialize(inference) {
     if (!inference) {
       return {
+        processingScores: {},
         processing: {
-          profile: {
-            description: 'No processing data available',
-            methods: [],
-            methodCount: 0,
-            influence: {}
-          },
+          description: 'No processing data available',
+          methods: [],
+          methodCount: 0,
           categories: {},
-          methodDetails: [],
-          _sectionRef: "processing"
+          influence: {},
+          details: []
         }
       };
     }
 
-    // Create the profile section
-    const profile = {
-      description: inference.description || 'No description available',
-      methods: inference.processingMethods || [],
-      methodCount: inference.methodCount || 0,
-      influence: inference.processingInfluence || {}
-    };
-
-    // Create the method details section
-    const methodDetails = (inference.methodDetails || []).map(detail => ({
-      method: detail.method || 'Unknown Method',
-      category: detail.category || 'general',
-      intensity: detail.intensity || 1.0,
-      description: detail.description || '',
-      effects: detail.effects || {}
-    }));
+    // Calculate processing scores
+    const processingScores = this.calculateProcessingScores(inference);
 
     return {
+      processingScores,
       processing: {
-        profile,
+        description: inference.description || 'No description available',
+        methods: inference.processingMethods || [],
+        methodCount: inference.methodCount || 0,
         categories: inference.methodCategories || {},
-        methodDetails,
-        _sectionRef: "processing"
+        influence: inference.processingInfluence || {},
+        details: inference.methodDetails || []
       }
     };
   }
   
   // Calculate processing influence on effects
-  calculateProcessingInfluence(tea) {
-    // Extract processingMethods from tea if it's the full tea object
-    const processingMethods = Array.isArray(tea) ? tea : 
-      (tea && tea.processingMethods ? tea.processingMethods : []);
-    
-    if (!processingMethods || !Array.isArray(processingMethods) || processingMethods.length === 0) {
-      return {};
-    }
-    
-    // Create initial scores object
-    const scores = {};
-    
-    // Calculate Qi Movement scores based on compounds and processing
-    if (tea && typeof tea === 'object' && tea.caffeineLevel !== undefined && tea.lTheanineLevel !== undefined) {
-      const qiScores = TeaGlobalMapping.mapCompoundsAndProcessingToQiMovementScores(tea);
-      const primaryQiMovement = Object.keys(qiScores).length > 0
-        ? Object.entries(qiScores).sort((a, b) => b[1] - a[1])[0][0]
-        : 'balanced'; // Default Qi movement
-      
-      // Apply TCM effect mapping based on Qi Movement
-      const qiMapKey = primaryQiMovement === 'balanced' ? 'balancedQi' : primaryQiMovement;
-      if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[qiMapKey]) {
-        TeaGlobalMapping.tcmToPrimaryEffectMap[qiMapKey].forEach(([effect, strength]) => {
-          scores[effect] = (scores[effect] || 0) + strength;
-        });
-      }
-    }
-    
-    // Apply default processing rules
-    this.applyDefaultProcessingRules(processingMethods, scores);
-    
-    // Apply custom processing influences from dataset
-    for (const method of processingMethods) {
-      // Parse method to handle intensity qualifiers
-      const { baseMethod, intensity } = this.parseProcessingMethod(method);
-      
-      // Calculate intensity modifier
-      const intensityModifier = this.getIntensityModifier(baseMethod, intensity);
-      
-      // Apply influence from dataset if available
-      if (this.processingInfluences[baseMethod]) {
-        const influences = this.processingInfluences[baseMethod];
-        
-        for (const effectId in influences) {
-          if (influences.hasOwnProperty(effectId)) {
-            const baseInfluence = influences[effectId];
-            
-            // Apply intensity modifier to base influence
-            const modifiedInfluence = baseInfluence * intensityModifier;
-            
-            // Update scores
-            scores[effectId] = (scores[effectId] || 0) + modifiedInfluence;
-          }
+  calculateProcessingScores(tea) {
+    const processingScores = {};
+    const safeTea = {
+        processing: tea.processing || []
+    };
+
+    // Helper function to add processing scores
+    const addProcessingScore = (effect, score) => {
+        processingScores[effect] = (processingScores[effect] || 0) + score;
+    };
+
+    // Process each processing method
+    safeTea.processing.forEach(method => {
+        switch (method) {
+            case 'shade-grown':
+                addProcessingScore("focusing", 3.0);
+                addProcessingScore("calming", 2.0);
+                break;
+            case 'steamed':
+                addProcessingScore("focusing", 2.5);
+                addProcessingScore("calming", 1.5);
+                break;
+            case 'pan-fired':
+                addProcessingScore("focusing", 2.0);
+                addProcessingScore("grounding", 1.5);
+                break;
+            case 'light-roast':
+                addProcessingScore("harmonizing", 2.0);
+                addProcessingScore("elevating", 1.5);
+                break;
+            case 'heavy-roast':
+                addProcessingScore("grounding", 3.0);
+                addProcessingScore("comforting", 2.0);
+                break;
+            case 'aged':
+                addProcessingScore("grounding", 3.0);
+                addProcessingScore("harmonizing", 2.0);
+                break;
+            case 'compressed':
+                addProcessingScore("grounding", 2.0);
+                addProcessingScore("harmonizing", 1.5);
+                break;
+            case 'oxidized':
+                addProcessingScore("energizing", 2.0);
+                addProcessingScore("comforting", 1.5);
+                break;
+            case 'fermented':
+                addProcessingScore("grounding", 2.5);
+                addProcessingScore("restorative", 1.5);
+                break;
         }
-      }
-    }
-    
-    return scores;
+    });
+
+    // Apply processing combinations
+    this.applyProcessingCombinations(safeTea, processingScores);
+
+    // Normalize scores
+    Object.keys(processingScores).forEach(effect => {
+        processingScores[effect] = Math.min(10, Math.max(0, processingScores[effect]));
+    });
+
+    return processingScores;
   }
   
   // Parse processing method to handle intensity qualifiers
@@ -366,50 +360,114 @@ export class ProcessingCalculator {
       // Apply default rules based on method
       switch (baseMethod) {
         case 'steamed':
-          scores['soothing'] = (scores['soothing'] || 0) + (2.0 * intensityModifier);
-          scores['clarifying'] = (scores['clarifying'] || 0) + (1.5 * intensityModifier);
+          scores['soothing'] = (scores['soothing'] || 0) + (3.5 * intensityModifier);  // INCREASED from 2.0
+          scores['clarifying'] = (scores['clarifying'] || 0) + (2.0 * intensityModifier);  // INCREASED from 1.5
           break;
         case 'roasted':
-          scores['nurturing'] = (scores['nurturing'] || 0) + (2.0 * intensityModifier);
-          scores['comforting'] = (scores['comforting'] || 0) + (1.5 * intensityModifier);
+          // Strengthened nurturing effect from roasted profiles
+          const roastIntensity = intensity === 'heavy' || intensity === 'dark' ? 1.7 : 1.3;  // INCREASED from 1.5/1.0
+          scores['nurturing'] = (scores['nurturing'] || 0) + (6.5 * roastIntensity * intensityModifier);  // INCREASED from 5.0
+          scores['comforting'] = (scores['comforting'] || 0) + (4.0 * intensityModifier);  // INCREASED from 2.5
           break;
         case 'oxidation':
-          scores['revitalizing'] = (scores['revitalizing'] || 0) + (1.5 * intensityModifier);
-          scores['awakening'] = (scores['awakening'] || 0) + (1.0 * intensityModifier);
+          scores['revitalizing'] = (scores['revitalizing'] || 0) + (2.0 * intensityModifier);  // INCREASED from 1.5
+          scores['awakening'] = (scores['awakening'] || 0) + (2.5 * intensityModifier);  // INCREASED significantly from 1.0
           break;
         case 'fermented':
-          scores['stabilizing'] = (scores['stabilizing'] || 0) + (2.0 * intensityModifier);
-          scores['centering'] = (scores['centering'] || 0) + (1.5 * intensityModifier);
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + (2.5 * intensityModifier);  // Unchanged from 2.5
+          scores['centering'] = (scores['centering'] || 0) + (2.8 * intensityModifier);  // Unchanged from 2.8
           break;
         case 'aged':
-          scores['centering'] = (scores['centering'] || 0) + (1.5 * intensityModifier);
-          scores['stabilizing'] = (scores['stabilizing'] || 0) + (1.0 * intensityModifier);
+          scores['centering'] = (scores['centering'] || 0) + (2.5 * intensityModifier);  // Unchanged from 2.5
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + (2.0 * intensityModifier);  // Unchanged from 2.0
           break;
         case 'shade-grown':
-          scores['peaceful'] = (scores['peaceful'] || 0) + 2.0;
-          scores['clarifying'] = (scores['clarifying'] || 0) + 1.5;
+          // Adjust shade-grown to be more balanced
+          scores['peaceful'] = (scores['peaceful'] || 0) + 1.2;  // REDUCED from 1.5
+          scores['clarifying'] = (scores['clarifying'] || 0) + 3.5;  // INCREASED from 2.0
           break;
         case 'pan-fired':
-          scores['revitalizing'] = (scores['revitalizing'] || 0) + 1.5;
-          scores['awakening'] = (scores['awakening'] || 0) + 1.0;
+          scores['revitalizing'] = (scores['revitalizing'] || 0) + 2.0;  // INCREASED from 1.5
+          scores['awakening'] = (scores['awakening'] || 0) + 2.5;  // INCREASED from 1.0
           break;
         case 'sun-dried':
-          scores['elevating'] = (scores['elevating'] || 0) + 1.5;
-          scores['renewing'] = (scores['renewing'] || 0) + 1.0;
+          scores['elevating'] = (scores['elevating'] || 0) + 4.5;  // INCREASED from 3.0
+          scores['renewing'] = (scores['renewing'] || 0) + 2.5;  // INCREASED from 2.0
           break;
         case 'compressed':
-          scores['stabilizing'] = (scores['stabilizing'] || 0) + 2.0;
-          scores['centering'] = (scores['centering'] || 0) + 1.0;
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + 2.0;  // Unchanged
+          scores['centering'] = (scores['centering'] || 0) + 1.0;  // Unchanged
           break;
         case 'minimal-processing':
-          scores['clarifying'] = (scores['clarifying'] || 0) + 1.5;
-          scores['peaceful'] = (scores['peaceful'] || 0) + 1.0;
+          scores['clarifying'] = (scores['clarifying'] || 0) + 2.0;  // INCREASED from 1.5
+          scores['peaceful'] = (scores['peaceful'] || 0) + 0.8;  // REDUCED from 1.0
+          break;
+        case 'heavy-roast':
+          scores['nurturing'] = (scores['nurturing'] || 0) + 6.5;  // INCREASED from 5.5
+          scores['centering'] = (scores['centering'] || 0) + 3.5;  // Unchanged
+          scores['comforting'] = (scores['comforting'] || 0) + 5.0;  // INCREASED from 4.0
+          break;
+        case 'medium-roast':
+          scores['nurturing'] = (scores['nurturing'] || 0) + 5.0;  // INCREASED from 4.0
+          scores['balancing'] = (scores['balancing'] || 0) + 2.7;  // REDUCED from 3.0
+          break;
+        case 'pile-fermented':
+        case 'fermented':
+          scores['centering'] = (scores['centering'] || 0) + 4.5;  // Unchanged
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + 4.0;  // Unchanged
+          break;
+        case 'withered':
+          scores['balancing'] = (scores['balancing'] || 0) + 2.0;  // REDUCED from 2.2
+          scores['elevating'] = (scores['elevating'] || 0) + 1.5;  // NEW addition
+          break;
+        case 'smoked':
+        case 'pine-fired':
+          scores['nurturing'] = (scores['nurturing'] || 0) + 5.5;  // INCREASED from 4.5
+          scores['comforting'] = (scores['comforting'] || 0) + 4.5;  // INCREASED from 3.5
+          scores['stabilizing'] = (scores['stabilizing'] || 0) + 2.5;  // Unchanged
+          break;
+        case 'light-oxidation':
+          scores['elevating'] = (scores['elevating'] || 0) + 3.5;  // NEW addition
+          scores['clarifying'] = (scores['clarifying'] || 0) + 2.0;  // NEW addition
+          break;
+        case 'mixed-with-rice':
+        case 'genmaicha':
+          scores['comforting'] = (scores['comforting'] || 0) + 6.0;  // NEW significant addition
+          scores['grounding'] = (scores['grounding'] || 0) + 3.5;  // NEW addition
+          break;
+        case 'bug-bitten':
+          scores['elevating'] = (scores['elevating'] || 0) + 3.0;  // NEW addition for Oriental Beauty
+          scores['restorative'] = (scores['restorative'] || 0) + 2.5;  // NEW addition
           break;
         default:
           // No default effects for unknown methods
           break;
       }
     });
+    
+    // Additional processing method combinations
+    this.applyProcessingCombinations(processingMethods, scores);
+  }
+  
+  // NEW method to handle processing combinations
+  applyProcessingCombinations(tea, scores) {
+    const addScore = (effect, score) => {
+        scores[effect] = (scores[effect] || 0) + score;
+    };
+
+    // Gyokuro (shade-grown + steamed)
+    if (tea.processing.includes('shade-grown') && tea.processing.includes('steamed')) {
+        addScore("focusing", 1.5);
+        addScore("calming", 1.0);
+    }
+
+    // Special case for multiple processing methods
+    if (tea.processing.length > 2) {
+        // Reduce scores slightly to prevent overrepresentation
+        Object.keys(scores).forEach(effect => {
+            scores[effect] = scores[effect] * 0.9;
+        });
+    }
   }
   
   // Calculate the contribution of individual processing methods to a specific effect

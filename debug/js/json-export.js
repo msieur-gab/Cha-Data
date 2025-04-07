@@ -16,11 +16,13 @@ import { TimingCalculator } from '../../js/calculators/TimingCalculator.js';
 import { SeasonCalculator } from '../../js/calculators/SeasonCalculator.js';
 import { InteractionCalculator } from '../../js/calculators/InteractionCalculator.js';
 import { TeaEffectCalculator } from '../../js/calculators/TeaEffectCalculator.js';
+import { TeaTypeCalculator } from '../../js/calculators/TeaTypeCalculator.js';
 import { effectCombinations } from '../../js/props/EffectCombinations.js';
 import { mapEffectCombinations } from '../../js/utils/EffectInteractionMapper.js';
 import { primaryEffects } from '../../js/props/PrimaryEffects.js';
 import { flavorInfluences } from '../../js/props/FlavorInfluences.js';
 import { processingInfluences } from '../../js/props/ProcessingInfluences.js';
+import { teaTypeEffects } from '../../js/props/EffectMapping.js';
 import { normalizeString } from '../../js/utils/helpers.js';
 
 // Current tea and JSON data
@@ -242,43 +244,41 @@ function generateTestSections(tea) {
             title: 'Expected Effects',
             calculator: 'None',
             render: () => {
+                // Initialize TeaTypeCalculator
+                const teaTypeCalculator = new TeaTypeCalculator();
+                
+                // Get tea type effects
+                const teaTypeScores = teaTypeCalculator.calculateTeaTypeScores(tea);
+                
+                // Sort effects by score
+                const sortedEffects = Object.entries(teaTypeScores)
+                    .sort(([, a], [, b]) => b - a);
+                
                 // Format the result as markdown
-                let markdown = `## Tea Expected Effects\n\n`;
+                let markdown = `## Tea Type Effects\n\n`;
                 
-                // Display expected effects
-                markdown += `### Expected Effects\n`;
-                if (tea.expectedEffects?.dominant) {
-                    markdown += `- **Dominant Effect**: ${tea.expectedEffects.dominant}\n`;
+                // Display tea type effects
+                markdown += `### Characteristic Effects\n`;
+                if (sortedEffects.length > 0) {
+                    markdown += `- **Dominant Effect**: ${sortedEffects[0][0]} (${sortedEffects[0][1].toFixed(1)}/10)\n`;
                 }
-                if (tea.expectedEffects?.supporting) {
-                    if (Array.isArray(tea.expectedEffects.supporting)) {
-                        markdown += `- **Supporting Effect**: ${tea.expectedEffects.supporting.join(', ')}\n`;
-                    } else {
-                        markdown += `- **Supporting Effect**: ${tea.expectedEffects.supporting}\n`;
-                    }
+                if (sortedEffects.length > 1) {
+                    markdown += `- **Supporting Effect**: ${sortedEffects[1][0]} (${sortedEffects[1][1].toFixed(1)}/10)\n`;
                 }
                 
-                // Compound properties that influence effects
-                markdown += `\n### Compound Properties\n`;
-                const ratio = tea.lTheanineLevel / tea.caffeineLevel;
-                markdown += `- **L-Theanine Level**: ${tea.lTheanineLevel}/10\n`;
-                markdown += `- **Caffeine Level**: ${tea.caffeineLevel}/10\n`;
-                markdown += `- **L-Theanine/Caffeine Ratio**: ${ratio.toFixed(2)}\n`;
-                
-                if (ratio > 1.5) {
-                    markdown += `\nHigh L-Theanine to Caffeine ratio promotes peaceful and soothing effects.\n`;
-                } else if (ratio < 1.0) {
-                    markdown += `\nLow L-Theanine to Caffeine ratio promotes revitalizing and awakening effects.\n`;
-                } else {
-                    markdown += `\nBalanced L-Theanine to Caffeine ratio promotes balanced effects.\n`;
-                }
+                // Tea type description
+                const teaType = tea.type.toLowerCase();
+                const mappedType = teaType === 'puerh' ? 'puerh-shou' : teaType;
+                const typeEffects = teaTypeEffects[mappedType]?.effects || teaTypeEffects.green.effects;
+                markdown += `\n### Description\n`;
+                markdown += `${typeEffects?.description || 'No description available'}\n`;
                 
                 return markdown;
             },
             dataFlow: `
-                Input: tea.expectedEffects, tea.lTheanineLevel, tea.caffeineLevel
-                → Display expected effects and compound properties
-                → Output: Expected effects summary
+                Input: tea.type
+                → Get tea type effects from TeaTypeCalculator
+                → Output: Tea type characteristic effects
             `
         },
         {
@@ -551,7 +551,8 @@ function generateJsonData(tea) {
         processing: 0.18,
         geography: 0.12,
         flavor: 0.12,
-        compounds: 0.18
+        compounds: 0.18,
+        teaType: 0.18
     };
     
     // 3. Get unique effect IDs
@@ -636,23 +637,61 @@ function generateJsonData(tea) {
                 (typeof primaryEffects === 'object' ? Object.values(primaryEffects) : []);
                 
             const effect = primaryEffectsArray.find(e => e && e.id === id);
+            
+            // If no effect found, try to find by name
+            if (!effect) {
+                const effectByName = primaryEffectsArray.find(e => e && e.name.toLowerCase() === id.toLowerCase());
+                if (effectByName) {
+                    return {
+                        id: effectByName.id,
+                        name: effectByName.name,
+                        description: effectByName.description,
+                        level: score
+                    };
+                }
+            }
+            
             return {
-                id,
-                name: effect ? effect.name : id.charAt(0).toUpperCase() + id.slice(1),
-                description: effect ? effect.description : '',
+                id: effect?.id || id,
+                name: effect?.name || id.charAt(0).toUpperCase() + id.slice(1),
+                description: effect?.description || '',
                 level: score
             };
         })
+        .filter(effect => effect.id && effect.name) // Filter out any undefined effects
         .sort((a, b) => b.level - a.level);
     
     // 9. Create the final effect structure
-    const dominantEffect = sortedEffects[0] || { id: 'balanced', name: 'Balanced', level: 5 };
+    const dominantEffect = sortedEffects[0] || { id: 'balanced', name: 'Balanced', description: 'A balanced state of mind and body', level: 5 };
     const supportingEffects = sortedEffects.slice(1, 3)
-        .filter(effect => effect.level >= config.get('supportingEffectThreshold', 3.5));
-    const additionalEffects = sortedEffects.slice(3)
-        .filter(effect => effect.level >= 4.0);
+        .filter(effect => effect.level >= config.get('supportingEffectThreshold', 3.5))
+        .map(effect => ({
+            id: effect.id,
+            name: effect.name,
+            description: effect.description,
+            level: effect.level
+        }));
     
-    // 10. Identify significant interactions
+    // 10. Create component scores structure
+    const componentScores = {
+        teaType: teaTypeEffects[tea.type.toLowerCase()]?.effects || teaTypeEffects.green.effects,
+        processing: processingResult?.data?.processing?.effects || {},
+        geography: geographyResult?.data?.effects || {},
+        flavors: flavorResult?.data?.flavor?.effects || {},
+        compounds: compoundResult?.data?.effects || {}
+    };
+    
+    // 11. Create score progression structure
+    const scoreProgression = {
+        withBaseScores,
+        withProcessingScores,
+        withGeographyScores,
+        withFlavorScores,
+        withCompoundScores,
+        finalScores
+    };
+    
+    // 12. Identify significant interactions
     const interactionsIdentified = interactionCalculator.identifySignificantInteractions(finalScores);
     
     // Create the effects result with the added TCM profile
@@ -660,23 +699,9 @@ function generateJsonData(tea) {
         inference: teaEffectCalculator.formatInference({
             dominantEffect,
             supportingEffects,
-            additionalEffects,
             interactions: interactionsIdentified,
-            componentScores: {
-                base: baseScores || {},
-                processing: processingResult?.data?.processing?.effects || {},
-                geography: geographyResult?.data?.effects || {},
-                flavors: flavorResult?.data?.flavor?.effects || {},
-                compounds: compoundResult?.data?.effects || {}
-            },
-            buildUpScores: {
-                withBaseScores,
-                withProcessingScores,
-                withGeographyScores, 
-                withFlavorScores,
-                withCompoundScores,
-                finalScores
-            },
+            componentScores: componentScores,
+            scoreProgression: scoreProgression,
             baselineEffects: tea.expectedEffects,  // Add expected effects for comparison
             tcmProfile,       // Add TCM profile for reference
             originalExpectedEffects: tea.expectedEffects, // Add original expected effects for comparison
@@ -685,25 +710,11 @@ function generateJsonData(tea) {
         data: {
             dominantEffect,
             supportingEffects,
-            additionalEffects,
             interactions: interactionsIdentified,
             baselineEffects: tea.expectedEffects,  // Add expected effects for comparison
             tcmProfile,       // Add TCM profile for reference
-            buildUpScores: {
-                withBaseScores,
-                withProcessingScores,
-                withGeographyScores,
-                withFlavorScores,
-                withCompoundScores,
-                finalScores
-            },
-            componentScores: {
-                base: baseScores || {},
-                processing: processingResult?.data?.processing?.effects || {},
-                geography: geographyResult?.data?.effects || {},
-                flavors: flavorResult?.data?.flavor?.effects || {},
-                compounds: compoundResult?.data?.effects || {}
-            }
+            componentScores: componentScores,
+            scoreProgression: scoreProgression
         }
     };
     

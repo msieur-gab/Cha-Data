@@ -246,51 +246,60 @@ export const mapCompoundsAndProcessingToQiMovementScores = (tea) => {
 export const tcmToPrimaryEffectMap = {
     // Yin/Yang Nature -> Primary Effects
     Yin: [
-        ['soothing', 2.8], ['peaceful', 2.3], ['restorative', 1.7], 
-        ['reflective', 1.2], ['centering', 0.7]
+        ['calming', 2.8], ['harmonizing', 2.3], ['restorative', 1.7], 
+        ['grounding', 1.2], ['comforting', 0.7]
     ],
     Yang: [
-        ['revitalizing', 2.8], ['awakening', 2.3], ['nurturing', 1.7], 
-        ['elevating', 1.2]
+        ['energizing', 2.8], ['focusing', 2.3], ['elevating', 1.7],
+        ['harmonizing', 1.2], ['grounding', 0.7]
     ],
     Balanced: [
-        ['balancing', 2.2], ['centering', 1.4], ['stabilizing', 1.0]
+        ['harmonizing', 2.5], ['focusing', 2.0], ['grounding', 1.5],
+        ['calming', 1.0], ['energizing', 0.8]
     ],
     
     // Five Elements -> Primary Effects
-    wood: [
-        ['clarifying', 2.5], ['renewing', 2.0], ['elevating', 1.5], ['balancing', 0.8]
+    Wood: [
+        ['focusing', 2.5], ['harmonizing', 2.0], ['elevating', 1.5],
+        ['calming', 1.0], ['grounding', 0.8]
     ],
-    fire: [
-        ['revitalizing', 2.5], ['elevating', 2.0], ['awakening', 1.5], ['nurturing', 1.0]
+    Fire: [
+        ['energizing', 2.8], ['elevating', 2.3], ['focusing', 1.7],
+        ['harmonizing', 1.2], ['comforting', 0.7]
     ],
-    earth: [
-        ['balancing', 2.2], ['nurturing', 2.0], ['stabilizing', 1.5], 
-        ['comforting', 1.5], ['centering', 1.2]
+    Earth: [
+        ['grounding', 2.5], ['harmonizing', 2.0], ['comforting', 1.5],
+        ['restorative', 1.0], ['calming', 0.8]
     ],
-    metal: [
-        ['clarifying', 2.5], ['reflective', 2.0], ['balancing', 0.8], ['soothing', 0.8]
+    Metal: [
+        ['focusing', 2.5], ['grounding', 2.0], ['harmonizing', 1.5],
+        ['restorative', 1.0], ['calming', 0.8]
     ],
-    water: [
-        ['centering', 2.5], ['stabilizing', 2.0], ['reflective', 1.5], 
-        ['peaceful', 1.5], ['restorative', 1.0]
+    Water: [
+        ['calming', 2.8], ['restorative', 2.3], ['grounding', 1.7],
+        ['harmonizing', 1.2], ['comforting', 0.7]
     ],
     
     // Qi Movement -> Primary Effects
-    rising: [
-        ['elevating', 3.0], ['awakening', 2.5], ['revitalizing', 1.5], ['clarifying', 1.0]
+    Rising: [
+        ['energizing', 2.8], ['elevating', 2.3], ['focusing', 1.7],
+        ['harmonizing', 1.2], ['grounding', 0.7]
     ],
-    descending: [
-        ['centering', 2.8], ['stabilizing', 2.5], ['peaceful', 2.0], ['soothing', 1.5]
+    Descending: [
+        ['calming', 2.8], ['grounding', 2.3], ['restorative', 1.7],
+        ['harmonizing', 1.2], ['comforting', 0.7]
     ],
-    expanding: [
-        ['revitalizing', 2.2], ['elevating', 1.7], ['awakening', 1.0], ['renewing', 1.2]
+    Expanding: [
+        ['elevating', 2.5], ['energizing', 2.0], ['harmonizing', 1.5],
+        ['focusing', 1.0], ['grounding', 0.8]
     ],
-    contracting: [
-        ['clarifying', 2.0], ['reflective', 2.0], ['centering', 1.5], ['stabilizing', 0.8]
+    Contracting: [
+        ['grounding', 2.5], ['calming', 2.0], ['restorative', 1.5],
+        ['harmonizing', 1.0], ['comforting', 0.8]
     ],
-    balancedQi: [
-        ['balancing', 2.2], ['centering', 1.4], ['peaceful', 1.0]
+    Balanced: [
+        ['harmonizing', 2.5], ['grounding', 2.0], ['focusing', 1.5],
+        ['calming', 1.0], ['energizing', 0.8]
     ]
 };
 

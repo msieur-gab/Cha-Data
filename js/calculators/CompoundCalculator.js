@@ -4,11 +4,13 @@
 import { validateObject } from '../utils/helpers.js';
 // Add TCM mapping imports
 import * as TeaGlobalMapping from '../props/TeaGlobalMapping.js';
+import { effectMapping } from '../props/EffectMapping.js';
 
 export class CompoundCalculator {
   constructor(config, primaryEffects) {
     this.config = config;
     this.primaryEffects = primaryEffects;
+    this.effectMapping = effectMapping;
   }
   
   // Main calculate method following standardized calculator pattern
@@ -96,25 +98,33 @@ export class CompoundCalculator {
   
   // Serialize inference to structured data
   serialize(inference) {
-    const { levels, effects, analysis } = inference;
-    
+    if (!inference) {
+      return {
+        compoundScores: {},
+        compounds: {
+          description: 'No compound data available',
+          lTheanine: null,
+          caffeine: null,
+          ratio: null,
+          otherCompounds: {},
+          influence: {}
+        }
+      };
+    }
+
+    // Calculate compound scores
+    const compoundScores = this.calculateCompoundScores(inference);
+
     return {
-      lTheanine: analysis.lTheanineLevel,
-      caffeine: analysis.caffeineLevel,
-      ratio: parseFloat(analysis.ratio),
-      balance: {
-        primaryInfluence: analysis.primaryInfluence,
-        isBalanced: levels.balanced,
-        isExtreme: levels.extremeTea,
-        isDominant: analysis.primaryInfluence !== 'balanced'
-      },
-      levels: {
-        lTheanine: levels.highLTheanine ? 'high' : (levels.moderateLTheanine ? 'moderate' : 'low'),
-        caffeine: levels.highCaffeine ? 'high' : (levels.moderateCaffeine ? 'moderate' : 'low'),
-        ratio: levels.extremeRatio ? 'extreme high' : (levels.veryLowRatio ? 'very low' : (levels.lowRatio ? 'low' : 'balanced'))
-      },
-      effects: effects,
-      description: analysis.description
+      compoundScores,
+      compounds: {
+        description: inference.description || 'No description available',
+        lTheanine: inference.lTheanine || null,
+        caffeine: inference.caffeine || null,
+        ratio: inference.ratio || null,
+        otherCompounds: inference.otherCompounds || {},
+        influence: inference.compoundInfluence || {}
+      }
     };
   }
   
@@ -403,6 +413,87 @@ export class CompoundCalculator {
                         levels.balanced ? 'balanced' : 
                         ratio > 1.8 ? 'calming-leaning' : 'stimulating-leaning'
     };
+  }
+
+  calculateCompoundScores(tea) {
+    const compoundScores = {};
+    const safeTea = {
+      compounds: tea.compounds || {},
+      processing: tea.processing || [],
+      flavor: tea.flavor || []
+    };
+
+    // Helper function to add compound scores
+    const addCompoundScore = (effect, score) => {
+      compoundScores[effect] = (compoundScores[effect] || 0) + score;
+    };
+
+    // Process L-Theanine effects
+    if (safeTea.compounds.lTheanine) {
+      const lTheanineLevel = safeTea.compounds.lTheanine;
+      addCompoundScore("calming", Math.min(10, lTheanineLevel * 0.6));
+      addCompoundScore("focusing", Math.min(10, lTheanineLevel * 0.5));
+    }
+
+    // Process Caffeine effects
+    if (safeTea.compounds.caffeine) {
+      const caffeineLevel = safeTea.compounds.caffeine;
+      addCompoundScore("energizing", Math.min(10, caffeineLevel * 0.7));
+      addCompoundScore("focusing", Math.min(10, caffeineLevel * 0.5));
+    }
+
+    // Process EGCG effects
+    if (safeTea.compounds.egcg) {
+      const egcgLevel = safeTea.compounds.egcg;
+      addCompoundScore("focusing", Math.min(10, egcgLevel * 0.4));
+      addCompoundScore("restorative", Math.min(10, egcgLevel * 0.3));
+    }
+
+    // Process Theanine/Caffeine ratio effects
+    if (safeTea.compounds.lTheanine && safeTea.compounds.caffeine) {
+      const ratio = safeTea.compounds.lTheanine / safeTea.compounds.caffeine;
+      if (ratio > 1.5) {
+        addCompoundScore("calming", 2.0);
+        addCompoundScore("focusing", 1.5);
+      } else if (ratio < 1.0) {
+        addCompoundScore("energizing", 2.0);
+        addCompoundScore("focusing", 1.5);
+      } else {
+        addCompoundScore("harmonizing", 2.0);
+        addCompoundScore("grounding", 1.5);
+      }
+    }
+
+    // Process other compounds
+    if (safeTea.compounds.theobromine) {
+      const theobromineLevel = safeTea.compounds.theobromine;
+      addCompoundScore("comforting", Math.min(10, theobromineLevel * 0.4));
+      addCompoundScore("elevating", Math.min(10, theobromineLevel * 0.3));
+    }
+
+    if (safeTea.compounds.gaba) {
+      const gabaLevel = safeTea.compounds.gaba;
+      addCompoundScore("calming", Math.min(10, gabaLevel * 0.5));
+      addCompoundScore("grounding", Math.min(10, gabaLevel * 0.4));
+    }
+
+    // Apply processing-specific compound adjustments
+    if (safeTea.processing.includes('shade-grown')) {
+      addCompoundScore("focusing", 1.5);
+      addCompoundScore("calming", 1.0);
+    }
+
+    if (safeTea.processing.includes('heavy-roast')) {
+      addCompoundScore("grounding", 2.0);
+      addCompoundScore("comforting", 1.5);
+    }
+
+    // Normalize scores
+    Object.keys(compoundScores).forEach(effect => {
+      compoundScores[effect] = Math.min(10, Math.max(0, compoundScores[effect]));
+    });
+
+    return compoundScores;
   }
 }
 

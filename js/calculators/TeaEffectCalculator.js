@@ -7,11 +7,14 @@ import { FlavorCalculator } from './FlavorCalculator.js';
 import { ProcessingCalculator } from './ProcessingCalculator.js';
 import { GeographyCalculator } from './GeographyCalculator.js';
 import { InteractionCalculator } from './InteractionCalculator.js';
+import { TeaTypeCalculator } from './TeaTypeCalculator.js';
 import { normalizeScores, enhanceDominantEffect } from '../utils/normalization.js';
+import { effectMapping, teaTypeEffects } from '../props/EffectMapping.js';
 
 export class TeaEffectCalculator {
     constructor(config = new EffectSystemConfig()) {
         this.config = config;
+        this.teaTypeEffects = teaTypeEffects;
         this.primaryEffects = [];
         this.flavorInfluences = {};
         this.processingInfluences = {};
@@ -19,6 +22,7 @@ export class TeaEffectCalculator {
         this.geographicalInfluences = {};
         
         // Initialize the calculators
+        this.teaTypeCalculator = new TeaTypeCalculator();
         this.compoundCalculator = new CompoundCalculator(this.config, this.primaryEffects);
         this.flavorCalculator = new FlavorCalculator(this.config, this.flavorInfluences);
         this.processingCalculator = new ProcessingCalculator(this.config, this.processingInfluences);
@@ -89,162 +93,128 @@ export class TeaEffectCalculator {
 
     // Core inference method
     infer(tea) {
-        if (!tea || typeof tea !== 'object') {
+        if (!tea) {
             return {
-                dominantEffect: { id: 'balanced', name: 'Balanced', description: 'A balanced state of mind and body', level: 5 },
+                dominantEffect: { id: 'none', level: 0 },
                 supportingEffects: [],
                 additionalEffects: [],
                 interactions: [],
-                componentScores: {}
+                componentScores: {
+                    base: {},
+                    compounds: {},
+                    flavors: {},
+                    processing: {},
+                    geography: {}
+                },
+                scoreProgression: {}
             };
         }
 
-        // Create safe tea object with defaults
-        const safeTea = {
-            type: tea.type || 'unknown',
-            caffeineLevel: tea.caffeineLevel !== undefined ? tea.caffeineLevel : 3,
-            lTheanineLevel: tea.lTheanineLevel !== undefined ? tea.lTheanineLevel : 5,
-            flavorProfile: Array.isArray(tea.flavorProfile) ? tea.flavorProfile : [],
-            processingMethods: Array.isArray(tea.processingMethods) ? tea.processingMethods : [],
-            geography: tea.geography || null,
-            expectedEffects: tea.expectedEffects || {}
+        // Calculate scores from different aspects
+        const baseScores = this.calculateBaseScores(tea);
+        const compoundResult = this.compoundCalculator.calculate(tea);
+        const flavorResult = this.flavorCalculator.calculate(tea);
+        const processingResult = this.processingCalculator.calculate(tea);
+        const geographyResult = this.geographyCalculator.calculate(tea);
+
+        // Extract scores from results
+        const compoundScores = compoundResult.data?.compoundScores || {};
+        const flavorScores = flavorResult.data?.flavorScores || {};
+        const processingScores = processingResult.data?.processingScores || {};
+        const geographyScores = geographyResult.data?.geographyScores || {};
+
+        // Store component scores
+        const componentScores = {
+            base: baseScores,
+            compounds: compoundScores,
+            flavors: flavorScores,
+            processing: processingScores,
+            geography: geographyScores
         };
 
-        // Calculate component scores
-        const compoundScores = this.compoundCalculator.calculateCompoundEffects(safeTea) || {};
-        const flavorScores = this.flavorCalculator.calculateFlavorInfluence(safeTea.flavorProfile) || {};
-        const processingScores = this.processingCalculator.calculateProcessingInfluence(safeTea) || {};
-        
-        // Geography scores - handle both direct calculation and pre-loaded influences
-        let geoScores = {};
-        if (safeTea.geography && safeTea.geography.origin) {
-            geoScores = this.geographyCalculator.calculateGeographicEffects(safeTea.geography.origin) || {};
-        } else if (Object.keys(this.geographicalInfluences).length > 0) {
-            geoScores = this.geographicalInfluences;
-        }
+        // Calculate final scores with weights
+        const finalScores = {};
+        const weights = this.config.get('componentWeights');
 
-        // Generate base scores from L-Theanine to Caffeine ratio, NOT from expectedEffects
-        const baseScores = {};
-        
-        // Add L-Theanine to Caffeine ratio effects to base scores
-        const ratio = safeTea.lTheanineLevel / safeTea.caffeineLevel;
-        
-        if (ratio > 1.5) {
-            // L-Theanine dominant effects
-            baseScores["peaceful"] = (baseScores["peaceful"] || 0) + Math.min(10, safeTea.lTheanineLevel * 0.8);
-            baseScores["soothing"] = (baseScores["soothing"] || 0) + Math.min(10, safeTea.lTheanineLevel * 0.7);
-        }
-        
-        if (ratio < 1.0) {
-            // Caffeine dominant effects
-            baseScores["revitalizing"] = (baseScores["revitalizing"] || 0) + Math.min(10, safeTea.caffeineLevel * 0.9);
-            baseScores["awakening"] = (baseScores["awakening"] || 0) + Math.min(10, safeTea.caffeineLevel * 0.7);
-        }
-
-        // Get component weights
-        const weights = {
-            base: this.config.get('componentWeights.base') || 0.35,
-            compounds: this.config.get('componentWeights.compounds') || 0.18,
-            flavors: this.config.get('componentWeights.flavors') || 0.12,
-            processing: this.config.get('componentWeights.processing') || 0.20,
-            geography: this.config.get('componentWeights.geography') || 0.15
+        // Initialize score progression with base scores
+        const scoreProgression = {
+            withBaseScores: { ...baseScores }
         };
 
-        // Get all unique effect IDs from all component calculations
-        const allEffectIds = new Set([
-            ...Object.keys(baseScores),
-            ...Object.keys(compoundScores),
-            ...Object.keys(flavorScores),
-            ...Object.keys(processingScores),
-            ...Object.keys(geoScores)
-        ]);
-
-        // Track the build-up of scores for debugging
-        const withBaseScores = {};
-        const withProcessingScores = {};
-        const withGeographyScores = {};
-        const withFlavorScores = {};
-        const withCompoundScores = {};
+        // Add each component's scores progressively
+        let currentScores = { ...baseScores };
         
-        // Apply weighted calculation to combine component scores
-        const combinedScores = {};
-        
-        // Calculate combined score for each effect
-        allEffectIds.forEach(effect => {
-            // Calculate each component's contribution
-            const baseContribution = (baseScores[effect] || 0) * weights.base;
-            withBaseScores[effect] = baseContribution;
-            
-            const processingContribution = (processingScores[effect] || 0) * weights.processing;
-            withProcessingScores[effect] = withBaseScores[effect] + processingContribution;
-            
-            const geoContribution = (geoScores[effect] || 0) * weights.geography;
-            withGeographyScores[effect] = withProcessingScores[effect] + geoContribution;
-            
-            const flavorContribution = (flavorScores[effect] || 0) * weights.flavors;
-            withFlavorScores[effect] = withGeographyScores[effect] + flavorContribution;
-            
-            const compoundContribution = (compoundScores[effect] || 0) * weights.compounds;
-            withCompoundScores[effect] = withFlavorScores[effect] + compoundContribution;
-            
-            // Combined score is the sum of all weighted contributions
-            combinedScores[effect] = withCompoundScores[effect];
+        // Add processing scores
+        Object.entries(processingScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.processing;
         });
+        scoreProgression.withProcessingScores = { ...currentScores };
+
+        // Add geography scores
+        Object.entries(geographyScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.geography;
+        });
+        scoreProgression.withGeographyScores = { ...currentScores };
+
+        // Add flavor scores
+        Object.entries(flavorScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.flavors;
+        });
+        scoreProgression.withFlavorScores = { ...currentScores };
+
+        // Add compound scores
+        Object.entries(compoundScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.compounds;
+        });
+        scoreProgression.withCompoundScores = { ...currentScores };
         
         // Apply interactions
-        const interactionScores = this.interactionCalculator.applyEffectInteractions(combinedScores);
+        const interactionScores = this.interactionCalculator.applyEffectInteractions(tea, currentScores);
         
         // Normalize final scores
-        const normalizedScores = normalizeScores(interactionScores);
-        
-        // Enhance dominant effect
-        const finalScores = enhanceDominantEffect(normalizedScores);
-        
-        // Sort effects by score
-        const sortedEffects = Object.entries(finalScores)
-            .map(([id, score]) => {
+        Object.keys(interactionScores).forEach(effect => {
+            interactionScores[effect] = Math.min(10, Math.max(0, interactionScores[effect]));
+        });
+
+        // Get top effects
+        const sortedEffects = Object.entries(interactionScores)
+            .sort(([, a], [, b]) => b - a)
+            .map(([id, level]) => {
                 // Find the effect in primaryEffects
-                const effect = this.primaryEffects.find(e => e.id === id);
+                const effect = this.primaryEffects.find(e => e.id === id) || 
+                             this.primaryEffects.find(e => e.name.toLowerCase() === id.toLowerCase());
+                
                 return {
-                    id,
-                    name: effect ? effect.name : id.charAt(0).toUpperCase() + id.slice(1),
-                    description: effect ? effect.description : '',
-                    level: score
+                    id: effect?.id || id,
+                    name: effect?.name || id.charAt(0).toUpperCase() + id.slice(1),
+                    description: effect?.description || '',
+                    level: level
                 };
-            })
-            .sort((a, b) => b.level - a.level);
+            });
 
-        // Identify effects
-        const dominantEffect = sortedEffects[0] || { id: 'balanced', name: 'Balanced', description: 'A balanced state of mind and body', level: 5 };
-        const supportingEffects = sortedEffects.slice(1, 3)
+        const dominantEffect = sortedEffects[0] || {
+            id: 'balanced',
+            name: 'Balanced',
+            description: 'A balanced state of mind and body',
+            level: 5
+        };
+
+        const supportingEffects = sortedEffects
+            .slice(1, 3)
             .filter(effect => effect.level >= this.config.get('supportingEffectThreshold', 3.5));
-        const additionalEffects = sortedEffects.slice(3)
-            .filter(effect => effect.level >= 4.0);
 
-        // Get interactions
-        const interactions = this.interactionCalculator.identifySignificantInteractions(finalScores);
+        const additionalEffects = sortedEffects
+            .slice(3)
+            .filter(effect => effect.level >= 4.0);
 
         return {
             dominantEffect,
             supportingEffects,
             additionalEffects,
-            interactions,
-            componentScores: {
-                base: baseScores,
-                compounds: compoundScores,
-                flavors: flavorScores,
-                processing: processingScores,
-                geography: geoScores
-            },
-            buildUpScores: {
-                withBaseScores,
-                withProcessingScores,
-                withGeographyScores,
-                withFlavorScores,
-                withCompoundScores
-            },
-            finalScores,
-            originalExpectedEffects: safeTea.expectedEffects // Keep original expected effects for comparison only
+            interactions: this.interactionCalculator.getEffectInteractions(tea),
+            componentScores,
+            scoreProgression,
+            finalScores: interactionScores
         };
     }
 
@@ -260,9 +230,7 @@ export class TeaEffectCalculator {
             additionalEffects,
             interactions,
             componentScores,
-            buildUpScores,
-            finalScores,
-            originalExpectedEffects
+            scoreProgression
         } = inference;
 
         let markdown = `# Tea Effect Analysis\n\n`;
@@ -278,17 +246,17 @@ export class TeaEffectCalculator {
         };
 
         // Expected Effects Section
-        if (originalExpectedEffects) {
+        if (inference.originalExpectedEffects) {
             markdown += `## Expected Effects\n`;
             
-            if (originalExpectedEffects.dominant) {
-                markdown += `- **Dominant**: ${originalExpectedEffects.dominant}\n`;
+            if (inference.originalExpectedEffects.dominant) {
+                markdown += `- **Dominant**: ${inference.originalExpectedEffects.dominant}\n`;
             }
             
-            if (originalExpectedEffects.supporting) {
-                const supportingText = Array.isArray(originalExpectedEffects.supporting)
-                    ? originalExpectedEffects.supporting.join(', ')
-                    : originalExpectedEffects.supporting;
+            if (inference.originalExpectedEffects.supporting) {
+                const supportingText = Array.isArray(inference.originalExpectedEffects.supporting)
+                    ? inference.originalExpectedEffects.supporting.join(', ')
+                    : inference.originalExpectedEffects.supporting;
                 markdown += `- **Supporting**: ${supportingText}\n`;
             }
             
@@ -344,7 +312,7 @@ export class TeaEffectCalculator {
         }
 
         // Only add component details if we have them
-        if (buildUpScores && Object.keys(buildUpScores).length > 0 && finalScores && Object.keys(finalScores).length > 0) {
+        if (scoreProgression && Object.keys(scoreProgression).length > 0 && inference.finalScores && Object.keys(inference.finalScores).length > 0) {
             // Add a detail table for the top effects
             const topEffects = [
                 ...(supportingEffects || []), 
@@ -364,12 +332,12 @@ export class TeaEffectCalculator {
                     ].find(e => e && e.id === effectId);
                     if (!effect) return;
                     
-                    const baseScore = (buildUpScores.withBaseScores || {})[effectId]?.toFixed(1) || "0.0";
-                    const withProcessing = (buildUpScores.withProcessingScores || {})[effectId]?.toFixed(1) || "0.0";
-                    const withGeo = (buildUpScores.withGeographyScores || {})[effectId]?.toFixed(1) || "0.0";
-                    const withFlavor = (buildUpScores.withFlavorScores || {})[effectId]?.toFixed(1) || "0.0";
-                    const withCompound = (buildUpScores.withCompoundScores || {})[effectId]?.toFixed(1) || "0.0";
-                    const final = finalScores[effectId]?.toFixed(1) || "0.0";
+                    const baseScore = (scoreProgression.withBaseScores || {})[effectId]?.toFixed(1) || "0.0";
+                    const withProcessing = (scoreProgression.withProcessingScores || {})[effectId]?.toFixed(1) || "0.0";
+                    const withGeo = (scoreProgression.withGeographyScores || {})[effectId]?.toFixed(1) || "0.0";
+                    const withFlavor = (scoreProgression.withFlavorScores || {})[effectId]?.toFixed(1) || "0.0";
+                    const withCompound = (scoreProgression.withCompoundScores || {})[effectId]?.toFixed(1) || "0.0";
+                    const final = inference.finalScores[effectId]?.toFixed(1) || "0.0";
                     
                     // Check if this is a dominant or supporting effect
                     const isDominant = dominantEffect && dominantEffect.id === effectId;
@@ -393,7 +361,7 @@ export class TeaEffectCalculator {
             markdown += `|--------|------|-----------|---------|------------|----------|\n`;
             
             // Find the top 10 effects by final score
-            const topEffects = Object.entries(finalScores || {})
+            const topEffects = Object.entries(inference.finalScores || {})
                 .sort(([, a], [, b]) => b - a)
                 .slice(0, 10)
                 .map(([effectId]) => effectId);
@@ -432,9 +400,166 @@ export class TeaEffectCalculator {
             additionalEffects: inference.additionalEffects,
             interactions: inference.interactions,
             componentScores: inference.componentScores,
-            buildUpScores: inference.buildUpScores,
+            scoreProgression: inference.scoreProgression,
             finalScores: inference.finalScores,
             originalExpectedEffects: inference.originalExpectedEffects
+        };
+    }
+
+    calculateBaseScores(tea) {
+        const baseScores = {};
+        const safeTea = {
+            type: tea.type || 'green',
+            compounds: tea.compounds || {},
+            processing: tea.processing || [],
+            flavor: tea.flavor || []
+        };
+
+        // Get base effects for tea type
+        const typeEffects = this.teaTypeEffects[safeTea.type]?.effects || this.teaTypeEffects.green.effects;
+
+        // Apply base effects
+        Object.entries(typeEffects).forEach(([effect, score]) => {
+            baseScores[effect] = score;
+        });
+
+        // Calculate effects based on L-Theanine/Caffeine ratio
+        if (safeTea.compounds.lTheanine && safeTea.compounds.caffeine) {
+            const ratio = safeTea.compounds.lTheanine / safeTea.compounds.caffeine;
+            
+            if (ratio > 1.5) {
+                // L-Theanine dominant effects
+                baseScores.calming = (baseScores.calming || 0) + Math.min(10, safeTea.compounds.lTheanine * 0.8);
+                baseScores.focusing = (baseScores.focusing || 0) + Math.min(10, safeTea.compounds.lTheanine * 0.7);
+            } else if (ratio < 1.0) {
+                // Caffeine dominant effects
+                baseScores.energizing = (baseScores.energizing || 0) + Math.min(10, safeTea.compounds.caffeine * 0.9);
+                baseScores.focusing = (baseScores.focusing || 0) + Math.min(10, safeTea.compounds.caffeine * 0.7);
+            } else {
+                // Balanced effects
+                baseScores.harmonizing = (baseScores.harmonizing || 0) + Math.min(10, (safeTea.compounds.lTheanine + safeTea.compounds.caffeine) * 0.4);
+                baseScores.grounding = (baseScores.grounding || 0) + Math.min(10, (safeTea.compounds.lTheanine + safeTea.compounds.caffeine) * 0.3);
+            }
+        }
+
+        return baseScores;
+    }
+
+    calculateFinalScores(tea) {
+        // Calculate scores from different aspects
+        const baseScores = this.calculateBaseScores(tea);
+        const compoundScores = this.compoundCalculator.calculateCompoundScores(tea);
+        const flavorScores = this.flavorCalculator.calculateFlavorScores(tea);
+        const processingScores = this.processingCalculator.calculateProcessingScores(tea);
+        const geographyScores = this.geographyCalculator.calculateGeographyScores(tea);
+
+        // Combine scores with weights
+        const finalScores = {};
+        const weights = {
+            base: 0.3,
+            compounds: 0.25,
+            flavor: 0.2,
+            processing: 0.15,
+            geography: 0.1
+        };
+
+        // Combine all scores
+        [baseScores, compoundScores, flavorScores, processingScores, geographyScores].forEach((scores, index) => {
+            const weight = Object.values(weights)[index];
+            Object.entries(scores).forEach(([effect, score]) => {
+                finalScores[effect] = (finalScores[effect] || 0) + score * weight;
+            });
+        });
+
+        // Apply interactions
+        const interactionScores = this.interactionCalculator.applyEffectInteractions(tea, finalScores);
+        
+        // Normalize final scores
+        Object.keys(interactionScores).forEach(effect => {
+            interactionScores[effect] = Math.min(10, Math.max(0, interactionScores[effect]));
+        });
+
+        return interactionScores;
+    }
+
+    calculateTeaTypeScores(tea) {
+        const teaTypeScores = {};
+        
+        // Get tea type effects
+        const teaType = tea.type.toLowerCase();
+        const mappedType = teaType === 'puerh' ? 'puerh-shou' : teaType;
+        const typeEffects = teaTypeEffects[mappedType]?.effects || teaTypeEffects.green.effects;
+        
+        // Apply tea type effects
+        Object.entries(typeEffects).forEach(([effect, score]) => {
+            teaTypeScores[effect] = score;
+        });
+        
+        return teaTypeScores;
+    }
+
+    calculate(tea) {
+        // Calculate scores from each component
+        const teaTypeScores = this.calculateTeaTypeScores(tea);
+        const compoundScores = this.compoundCalculator.calculateCompoundScores(tea);
+        const flavorScores = this.flavorCalculator.calculateFlavorScores(tea);
+        const processingScores = this.processingCalculator.calculateProcessingScores(tea);
+        const geographyScores = this.geographyCalculator.calculateGeographyScores(tea);
+        
+        // Combine scores with weights
+        const componentScores = {
+            teaType: teaTypeScores,
+            compounds: compoundScores,
+            processing: processingScores,
+            geography: geographyScores,
+            flavors: flavorScores
+        };
+        
+        // Track score progression
+        const scoreProgression = {
+            withTeaTypeScores: { ...teaTypeScores },
+            withCompoundScores: {},
+            withProcessingScores: {},
+            withGeographyScores: {},
+            withFlavorScores: {},
+            finalScores: {}
+        };
+        
+        // Apply weights and combine scores
+        let currentScores = { ...teaTypeScores };
+        
+        // Add compound scores
+        Object.entries(compoundScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * this.config.get('componentWeights').compounds;
+        });
+        scoreProgression.withCompoundScores = { ...currentScores };
+        
+        // Add processing scores
+        Object.entries(processingScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * this.config.get('componentWeights').processing;
+        });
+        scoreProgression.withProcessingScores = { ...currentScores };
+        
+        // Add geography scores
+        Object.entries(geographyScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * this.config.get('componentWeights').geography;
+        });
+        scoreProgression.withGeographyScores = { ...currentScores };
+        
+        // Add flavor scores
+        Object.entries(flavorScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * this.config.get('componentWeights').flavor;
+        });
+        scoreProgression.withFlavorScores = { ...currentScores };
+        
+        // Apply interactions
+        const finalScores = this.interactionCalculator.applyEffectInteractions(tea, currentScores);
+        scoreProgression.finalScores = { ...finalScores };
+        
+        return {
+            componentScores,
+            scoreProgression,
+            finalScores
         };
     }
 }
