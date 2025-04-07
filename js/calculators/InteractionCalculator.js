@@ -100,11 +100,42 @@ export class InteractionCalculator {
     // If tea is already a score object, use it directly
     if (tea && typeof tea === 'object' && !Array.isArray(tea) && 
         Object.values(tea).every(v => typeof v === 'number')) {
-      return { ...tea };
+      
+      // Return a copy of the scores, ensuring only consolidated effects are used
+      const consolidatedScores = {
+        energizing: 0,
+        calming: 0,
+        focusing: 0,
+        harmonizing: 0,
+        grounding: 0,
+        elevating: 0,
+        comforting: 0,
+        restorative: 0
+      };
+      
+      // Process each score, keeping only consolidated effects
+      Object.entries(tea).forEach(([effect, score]) => {
+        // Only include if it's one of our 8 consolidated effects
+        if (consolidatedScores.hasOwnProperty(effect)) {
+          consolidatedScores[effect] = (consolidatedScores[effect] || 0) + score;
+        }
+        // Ignore old effect names
+      });
+      
+      return consolidatedScores;
     }
     
     // Otherwise, generate scores based on tea properties
-    const scores = {};
+    const scores = {
+      energizing: 0,
+      calming: 0,
+      focusing: 0,
+      harmonizing: 0,
+      grounding: 0,
+      elevating: 0,
+      comforting: 0,
+      restorative: 0
+    };
     
     if (tea && typeof tea === 'object') {
       // Add L-theanine and caffeine based effects
@@ -112,13 +143,20 @@ export class InteractionCalculator {
         const ratio = tea.lTheanineLevel / tea.caffeineLevel;
         
         if (ratio > 1.5) {
-          scores.peaceful = (scores.peaceful || 0) + tea.lTheanineLevel * 0.8;
-          scores.soothing = (scores.soothing || 0) + tea.lTheanineLevel * 0.7;
+          // L-Theanine dominant - calming effects
+          scores.calming += tea.lTheanineLevel * 0.8;
+          scores.focusing += tea.lTheanineLevel * 0.5;
         }
         
         if (ratio < 1.0) {
-          scores.revitalizing = (scores.revitalizing || 0) + tea.caffeineLevel * 0.9;
-          scores.awakening = (scores.awakening || 0) + tea.caffeineLevel * 0.7;
+          // Caffeine dominant - energizing effects
+          scores.energizing += tea.caffeineLevel * 0.9;
+          scores.focusing += tea.caffeineLevel * 0.5;
+        }
+        
+        // Balance ratio gives harmonizing
+        if (ratio >= 1.0 && ratio <= 1.5) {
+          scores.harmonizing += (tea.lTheanineLevel + tea.caffeineLevel) * 0.3;
         }
       }
     }
@@ -181,148 +219,34 @@ export class InteractionCalculator {
   applyBalancingRules(scores, tea) {
     if (!tea) return scores;
     
-    // Synergy between balancing and elevating
-    if (scores["balancing"] > 5.0 && scores["elevating"] > 3.0) {
-      scores["balancing"] *= 1.15; // Boost balancing when elevating present
+    // Synergy between harmonizing and elevating
+    if (scores.harmonizing > 5.0 && scores.elevating > 3.0) {
+      scores.harmonizing *= 1.15; // Boost harmonizing when elevating present
     }
     
-    // Prevent peaceful from dominating too many teas
-    if (scores["peaceful"] > 7.0) {
-      // Check if it should really be peaceful dominant
-      const hasPeacefulMarkers = tea.lTheanineLevel > 7.0 && 
-                                 tea.caffeineLevel < 4.0;
+    // Prevent calming from dominating too many teas
+    if (scores.calming > 7.0) {
+      // Check if it should really be calming dominant
+      const hasCalmingMarkers = tea.lTheanineLevel > 7.0 && 
+                               tea.caffeineLevel < 4.0;
         
-      if (!hasPeacefulMarkers) {
-        scores["peaceful"] *= 0.75; // REDUCED from 0.8 - Apply stronger reduction
+      if (!hasCalmingMarkers) {
+        scores.calming *= 0.75; // Apply reduction
       }
     }
     
-    // Prevent clarifying from dominating everything
-    if (scores["clarifying"] > 7.0) {
-      // Check if it should really be clarifying dominant
-      const hasClarifyingMarkers = 
-        tea.processingMethods?.includes("shade-grown") &&
-        tea.flavorProfile?.some(f => ["umami", "marine"].includes(f));
-        
-      if (!hasClarifyingMarkers) {
-        scores["clarifying"] *= 0.78; // REDUCED from 0.82 - Apply stronger reduction
-      }
+    // Ensure focusing isn't too weak when it should be present
+    if (scores.focusing < 5.0 && tea.lTheanineLevel > 5 && tea.caffeineLevel > 3) {
+      scores.focusing = Math.max(scores.focusing, 5.0);
     }
     
-    // Boost awakening effect which was underrepresented
-    if (scores["awakening"] > 0 && scores["awakening"] < 5.0) {
-      // Boost for teas with high caffeine and astringent/brisk flavors
-      if (tea.caffeineLevel > 4.0 || 
-          (tea.flavorProfile && tea.flavorProfile.some(f => 
-            ["brisk", "astringent", "bright"].includes(f)))) {
-        scores["awakening"] *= 1.7; // Significant boost
-      }
-    }
-    
-    // Boost nurturing effect which was underrepresented
-    if (scores["nurturing"] > 0) {
-      // Boost for roasted teas with woody/nutty flavors
-      if (tea.processingMethods && tea.processingMethods.some(p => p.includes("roast")) &&
-          tea.flavorProfile && tea.flavorProfile.some(f => 
-            ["woody", "nutty", "roasted"].includes(f))) {
-        scores["nurturing"] *= 1.4; // Significant boost
-      }
-    }
-    
-    // Boost elevating effect which was significantly underrepresented
-    if (scores["elevating"] > 0) {
-      // Check for floral and fruity flavors
-      if (tea.flavorProfile && tea.flavorProfile.some(f => 
-          ["floral", "fruity", "orchid", "honey", "apricot", "peach"].includes(f))) {
-        scores["elevating"] *= 1.6; // Strong boost
-      }
-      
-      // Additional boost for light processing
-      if (tea.processingMethods && tea.processingMethods.some(p => 
-          p.includes("light") || p === "minimal-processing")) {
-        scores["elevating"] *= 1.3; // Additional boost
-      }
-    }
-    
-    // Boost comforting effect which was underrepresented
-    if (scores["comforting"] > 0) {
-      // Boost for toasty/nutty flavors
-      if (tea.flavorProfile && tea.flavorProfile.some(f => 
-          ["toasted", "nutty", "cereal", "baked", "grain"].includes(f))) {
-        scores["comforting"] *= 1.8; // Strong boost for comforting
-      }
-    }
-    
-    // Boost restorative effect which was very underrepresented
-    if (scores["restorative"] > 0) {
-      // Boost for berry/antioxidant profiles
-      if (tea.flavorProfile && tea.flavorProfile.some(f => 
-          ["berry", "berries", "antioxidant", "fruity"].includes(f))) {
-        scores["restorative"] *= 2.5; // Very strong boost
-      }
-    }
-    
-    // Create interaction between centering and stabilizing
-    if (scores["centering"] > 4.0 && scores["stabilizing"] > 4.0) {
-      // If both are present, boost the lower one
-      if (scores["centering"] > scores["stabilizing"]) {
-        scores["stabilizing"] *= 1.2;
-      } else {
-        scores["centering"] *= 1.2;
-      }
-    }
-    
-    // Processing method interactions
-    if (tea.processingMethods) {
-      if (tea.processingMethods.includes("fermented") || 
-          tea.processingMethods.includes("pile-fermented") || 
-          tea.processingMethods.includes("aged")) {
-          
-        // Fermented and aged teas should have stronger centering effect
-        const centeringBoost = 1.0 + (0.1 * tea.processingMethods.filter(p => 
-          p.includes("ferment") || p.includes("aged")).length);
-          
-        scores["centering"] *= centeringBoost;
-        
-        // If already strong, don't overboost
-        scores["centering"] = Math.min(scores["centering"], 10.0);
-      }
-      
-      // Elevating boost for lighter processing methods
-      if (tea.processingMethods.some(p => p.includes("light") || p === "minimal-processing") &&
-          !tea.processingMethods.some(p => p.includes("heavy") || p.includes("dark"))) {
-        
-        // Check for floral flavor notes too
-        if (tea.flavorProfile && tea.flavorProfile.some(f => 
-            ["floral", "fruity", "orchid", "honey"].includes(f))) {
-          scores["elevating"] *= 1.25; // Boost elevating
-        }
-      }
-    }
-    
-    // Boost nurturing if it's expected to be strong but isn't
-    if (scores["nurturing"] < 4.0 && 
-        tea.flavorProfile && tea.flavorProfile.some(f => ["woody", "nutty", "roasted"].includes(f)) &&
-        tea.processingMethods && tea.processingMethods.some(p => p.includes("roast"))) {
-      scores["nurturing"] += 2.5;
-    }
-    
-    // Balance when multiple effects are strong
-    const strongEffects = Object.entries(scores)
-      .filter(([_, score]) => score > 8.0)
-      .map(([effect]) => effect);
-      
-    if (strongEffects.length > 2) {
-      // If too many strong effects, slightly reduce the lowest ones
-      const overrepresentedEffects = ["peaceful", "balancing", "clarifying"];
-      const effectsToReduce = strongEffects
-        .filter(effect => overrepresentedEffects.includes(effect))
-        .sort((a, b) => scores[a] - scores[b]);
-        
-      // Reduce the 2 lowest overrepresented effects
-      effectsToReduce.slice(0, 2).forEach(effect => {
-        scores[effect] *= 0.9;
-      });
+    // Ensure proper balance between energizing and calming
+    if (scores.energizing > 6.0 && scores.calming > 6.0) {
+      // They shouldn't both be high - reduce both and boost harmonizing
+      const reduction = 0.8;
+      scores.energizing *= reduction;
+      scores.calming *= reduction;
+      scores.harmonizing = Math.max(scores.harmonizing, 6.0);
     }
     
     return scores;
@@ -330,41 +254,65 @@ export class InteractionCalculator {
   
   // For backwards compatibility
   applyEffectInteractions(tea, scores) {
-    // Ensure scores is an object
+    // Make sure we're working with valid scores
     if (!scores || typeof scores !== 'object') {
-      return {};
+      return {
+        energizing: 0,
+        calming: 0,
+        focusing: 0,
+        harmonizing: 0,
+        grounding: 0,
+        elevating: 0,
+        comforting: 0,
+        restorative: 0
+      };
     }
 
-    // Create a copy of scores to avoid modifying the original
-    const resultScores = { ...scores };
-
-    const safeTea = {
-        processing: tea?.processing || [],
-        flavor: tea?.flavor || [],
-        compounds: tea?.compounds || {}
-    };
-
-    // Apply complementary effects
-    Object.entries(resultScores).forEach(([effect, score]) => {
-        if (score > 5) { // Only apply interactions for significant effects
-            const complementaryEffects = this.effectInteractionRules?.complementary?.[effect] || [];
-            complementaryEffects.forEach(complementaryEffect => {
-                resultScores[complementaryEffect] = (resultScores[complementaryEffect] || 0) + score * 0.3;
-            });
-        }
+    // Get consolidated scores, ensuring old effects are converted
+    const consolidatedScores = this._extractEffectScores(scores);
+    
+    // Apply synergistic effects
+    const modifiedScores = this.evaluateSynergisticEffects(consolidatedScores, tea);
+    
+    // Apply complementary and opposing effects
+    this.applyEffectRules(modifiedScores);
+    
+    return modifiedScores;
+  }
+  
+  /**
+   * Apply complementary and opposing effect rules
+   * @param {Object} scores - Effect scores 
+   */
+  applyEffectRules(scores) {
+    const { complementary, opposing } = this.effectInteractionRules;
+    const strengthFactor = this.config.get('interactionStrengthFactor', 0.8);
+    
+    // Apply complementary boosts
+    Object.entries(complementary).forEach(([effect, complementaryEffects]) => {
+      if (scores[effect] >= 4) { // Only apply if the effect is moderately strong
+        complementaryEffects.forEach(complementaryEffect => {
+          if (scores[complementaryEffect] > 0) {
+            // Boost the complementary effect
+            const boost = scores[effect] * 0.15 * strengthFactor;
+            scores[complementaryEffect] += boost;
+          }
+        });
+      }
     });
-
-    // Apply opposing effects
-    Object.entries(resultScores).forEach(([effect, score]) => {
-        if (score > 5) { // Only apply interactions for significant effects
-            const opposingEffects = this.effectInteractionRules?.opposing?.[effect] || [];
-            opposingEffects.forEach(opposingEffect => {
-                resultScores[opposingEffect] = Math.max(0, (resultScores[opposingEffect] || 0) - score * 0.2);
-            });
-        }
+    
+    // Apply opposing reductions
+    Object.entries(opposing).forEach(([effect, opposingEffects]) => {
+      if (scores[effect] >= 6) { // Only apply for stronger effects
+        opposingEffects.forEach(opposingEffect => {
+          if (scores[opposingEffect] > 0) {
+            // Reduce the opposing effect
+            const reduction = scores[effect] * 0.2 * strengthFactor;
+            scores[opposingEffect] = Math.max(0, scores[opposingEffect] - reduction);
+          }
+        });
+      }
     });
-
-    return resultScores;
   }
   
   /**

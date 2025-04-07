@@ -40,22 +40,23 @@ export class TimingCalculator {
             23: 2.5   // Night, preparing for sleep
         };
         
-        // Effect optimal time mapping - when each effect is most desirable
+        // Initialize effect timing map
         this.effectTimingMap = {
-            revitalizing: { peakHours: [7, 8, 9], falloffRate: 1.5 },
-            awakening: { peakHours: [6, 7, 8], falloffRate: 1.2 },
-            soothing: { peakHours: [19, 20, 21], falloffRate: 1.0 },
-            peaceful: { peakHours: [18, 19, 20, 21], falloffRate: 0.9 },
-            clarifying: { peakHours: [9, 10, 11, 14, 15], falloffRate: 1.2 },
-            reflective: { peakHours: [10, 11, 16, 17, 18], falloffRate: 0.8 },
-            comforting: { peakHours: [15, 16, 17, 18, 19], falloffRate: 0.7 },
-            nurturing: { peakHours: [16, 17, 18, 19], falloffRate: 0.8 },
-            stabilizing: { peakHours: [11, 12, 13, 16, 17], falloffRate: 0.9 },
-            centering: { peakHours: [6, 7, 17, 18, 19], falloffRate: 0.8 },
-            balancing: { peakHours: [9, 10, 11, 14, 15, 16], falloffRate: 0.6 },
-            elevating: { peakHours: [8, 9, 10, 15, 16], falloffRate: 1.1 },
-            renewing: { peakHours: [7, 8, 14, 15, 16], falloffRate: 1.0 },
-            restorative: { peakHours: [17, 18, 19, 20], falloffRate: 0.8 }
+            // Morning effects
+            energizing: { peakHours: [7, 8, 9], falloffRate: 1.5 },
+            focusing: { peakHours: [9, 10, 11, 14, 15], falloffRate: 1.2 },
+            
+            // Afternoon effects
+            elevating: { peakHours: [10, 11, 12, 15, 16], falloffRate: 1.0 },
+            
+            // Evening effects
+            calming: { peakHours: [18, 19, 20, 21], falloffRate: 0.9 },
+            restorative: { peakHours: [20, 21, 22], falloffRate: 1.0 },
+            
+            // All-day effects with specific peaks
+            comforting: { peakHours: [16, 17, 18, 19], falloffRate: 0.8 },
+            grounding: { peakHours: [11, 12, 13, 16, 17], falloffRate: 0.8 },
+            harmonizing: { peakHours: [9, 10, 11, 14, 15, 16], falloffRate: 0.6 }
         };
         
         // Caffeine metabolism factors
@@ -336,13 +337,13 @@ export class TimingCalculator {
             const ratio = tea.lTheanineLevel / tea.caffeineLevel;
             
             if (ratio > 1.5) {
-                effectScores["peaceful"] = Math.min(10, tea.lTheanineLevel * 0.6);
-                effectScores["soothing"] = Math.min(10, tea.lTheanineLevel * 0.5);
+                effectScores["calming"] = Math.min(10, tea.lTheanineLevel * 0.6);
+                effectScores["focusing"] = Math.min(10, tea.lTheanineLevel * 0.5);
             }
             
             if (ratio < 1.0) {
-                effectScores["revitalizing"] = Math.min(10, tea.caffeineLevel * 0.7);
-                effectScores["awakening"] = Math.min(10, tea.caffeineLevel * 0.5);
+                effectScores["energizing"] = Math.min(10, tea.caffeineLevel * 0.7);
+                effectScores["focusing"] = Math.min(10, (effectScores.focusing || 0) + tea.caffeineLevel * 0.3);
             }
         }
         
@@ -406,8 +407,8 @@ export class TimingCalculator {
         let score = 5; // Neutral base score
         
         // Check if any effects favor high or low alertness
-        const highAlertnessEffects = ['revitalizing', 'awakening', 'clarifying'];
-        const lowAlertnessEffects = ['soothing', 'peaceful', 'centering'];
+        const highAlertnessEffects = ['energizing', 'focusing'];
+        const lowAlertnessEffects = ['calming', 'grounding'];
         
         effectAlignment.forEach(({ effect, score: effectScore }) => {
             if (highAlertnessEffects.includes(effect)) {

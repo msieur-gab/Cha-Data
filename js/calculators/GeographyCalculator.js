@@ -155,10 +155,10 @@ export class GeographyCalculator {
                 'focusing': 1.5,
                 'elevating': 1.3,
                 'calming': 1.2,
-                'reflective': 1.1
+                'harmonizing': 1.1
             },
             'mountain': { // 1000-1800m
-                'refreshing': 1.2,
+                'energizing': 1.2,
                 'harmonizing': 1.1,
                 'focusing': 1.1,
                 'elevating': 1.1
@@ -171,8 +171,7 @@ export class GeographyCalculator {
             'lowland': { // < 500m
                 'grounding': 1.3,
                 'comforting': 1.2,
-                'grounding': 1.1,
-                'comforting': 1.1
+                'restorative': 1.1
             }
         };
         
@@ -180,7 +179,7 @@ export class GeographyCalculator {
         this.climateImpactScaling = {
             'tropical': {
                 'energizing': 1.3,
-                'energizing': 1.2,
+                'elevating': 1.2,
                 'comforting': 1.1
             },
             'subtropical': {
@@ -191,21 +190,21 @@ export class GeographyCalculator {
             'temperate': {
                 'harmonizing': 1.2,
                 'restorative': 1.1,
-                'reflective': 1.0
+                'calming': 1.0
             },
             'highland': {
                 'focusing': 1.3,
                 'calming': 1.2,
-                'reflective': 1.1
+                'harmonizing': 1.1
             },
             'humid': {
                 'comforting': 1.2,
                 'grounding': 1.1,
-                'comforting': 1.0
+                'restorative': 1.0
             },
             'dry': {
                 'focusing': 1.2,
-                'reflective': 1.1,
+                'grounding': 1.1,
                 'harmonizing': 1.0
             }
         };
@@ -230,11 +229,11 @@ export class GeographyCalculator {
             'river': {
                 'harmonizing': 1.2,
                 'restorative': 1.1,
-                'restorative': 1.0
+                'calming': 1.0
             },
             'coastal': {
-                'refreshing': 1.3,
-                'energizing': 1.1,
+                'energizing': 1.3,
+                'elevating': 1.1,
                 'focusing': 1.0
             },
             'island': {
@@ -943,107 +942,59 @@ export class GeographyCalculator {
     }
 
     calculateGeographyScores(tea) {
-        const geographyScores = {};
-        const safeTea = {
-            geography: tea.geography || {},
-            processing: tea.processing || []
+        if (!tea || !tea.origin) {
+            return {};
+        }
+        
+        // Initialize with the 8 consolidated effects
+        const scores = {
+            energizing: 0,
+            calming: 0,
+            focusing: 0,
+            harmonizing: 0,
+            grounding: 0,
+            elevating: 0,
+            comforting: 0,
+            restorative: 0
         };
-
-        // Helper function to add geography scores
+        
+        // Helper function to add scores
         const addGeographyScore = (effect, score) => {
-            geographyScores[effect] = (geographyScores[effect] || 0) + score;
+            // Only add if it's one of our 8 consolidated effects
+            if (scores.hasOwnProperty(effect)) {
+                scores[effect] += score;
+            }
+            // Ignore any old effect names
         };
-
-        // Process elevation effects
-        if (safeTea.geography.elevation) {
-            if (safeTea.geography.elevation > 1500) {
-                addGeographyScore("focusing", 2.5);
-                addGeographyScore("elevating", 2.0);
-            } else if (safeTea.geography.elevation > 1000) {
-                addGeographyScore("focusing", 2.0);
-                addGeographyScore("harmonizing", 1.5);
-            }
+        
+        // Extract geographic data
+        const geoData = this.extractGeographicData(tea.origin);
+        
+        // Apply effects from different geographic factors
+        if (geoData.elevation) {
+            this.applyElevationEffects(geoData, scores);
         }
-
-        // Process climate effects
-        if (safeTea.geography.climate) {
-            switch (safeTea.geography.climate) {
-                case 'subtropical':
-                    addGeographyScore("harmonizing", 2.0);
-                    addGeographyScore("comforting", 1.5);
-                    break;
-                case 'temperate':
-                    addGeographyScore("focusing", 2.0);
-                    addGeographyScore("calming", 1.5);
-                    break;
-                case 'tropical':
-                    addGeographyScore("energizing", 2.0);
-                    addGeographyScore("elevating", 1.5);
-                    break;
-            }
+        
+        if (geoData.latitude) {
+            this.applyLatitudeEffects(geoData, scores);
         }
-
-        // Process soil type effects
-        if (safeTea.geography.soilType) {
-            switch (safeTea.geography.soilType) {
-                case 'volcanic':
-                    addGeographyScore("energizing", 2.0);
-                    addGeographyScore("focusing", 1.5);
-                    break;
-                case 'mineral-rich':
-                    addGeographyScore("grounding", 2.0);
-                    addGeographyScore("harmonizing", 1.5);
-                    break;
-                case 'alluvial':
-                    addGeographyScore("calming", 2.0);
-                    addGeographyScore("restorative", 1.5);
-                    break;
-            }
+        
+        if (geoData.geographicFeatures && geoData.geographicFeatures.length > 0) {
+            this.applyTerrainEffects(geoData, scores);
         }
-
-        // Process region-specific effects
-        if (safeTea.geography.region) {
-            switch (safeTea.geography.region) {
-                case 'wuyi':
-                    addGeographyScore("grounding", 2.5);
-                    addGeographyScore("harmonizing", 2.0);
-                    break;
-                case 'taiwan':
-                    addGeographyScore("elevating", 2.5);
-                    addGeographyScore("focusing", 1.5);
-                    break;
-                case 'darjeeling':
-                    addGeographyScore("elevating", 2.0);
-                    addGeographyScore("focusing", 1.5);
-                    break;
-                case 'yunnan':
-                    addGeographyScore("grounding", 2.5);
-                    addGeographyScore("restorative", 1.5);
-                    break;
-                case 'kyoto':
-                    addGeographyScore("focusing", 2.5);
-                    addGeographyScore("calming", 1.5);
-                    break;
-            }
+        
+        if (geoData.soilType) {
+            this.applySoilEffects(geoData, scores);
         }
-
-        // Apply processing-specific geography adjustments
-        if (safeTea.processing.includes('shade-grown')) {
-            addGeographyScore("focusing", 1.5);
-            addGeographyScore("calming", 1.0);
+        
+        if (geoData.climate) {
+            this.applyClimateEffects(geoData, scores);
         }
-
-        if (safeTea.processing.includes('heavy-roast')) {
-            addGeographyScore("grounding", 2.0);
-            addGeographyScore("comforting", 1.5);
-        }
-
-        // Normalize scores
-        Object.keys(geographyScores).forEach(effect => {
-            geographyScores[effect] = Math.min(10, Math.max(0, geographyScores[effect]));
-        });
-
-        return geographyScores;
+        
+        // Apply region-specific adjustments
+        this.applyRegionSpecificAdjustments(geoData, scores);
+        
+        return scores;
     }
 }
 

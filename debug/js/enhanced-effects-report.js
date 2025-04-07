@@ -20,11 +20,11 @@ export async function generateEnhancedEffectsReport(progressCallback) {
     // Initialize configuration with recommended values
     const config = new EffectSystemConfig({
         componentWeights: {
-            teaType: 0.35,         // Reduced from 0.45
-            compounds: 0.15,    // Unchanged
-            processing: 0.25,   // Increased from 0.18
-            geography: 0.15,    // Increased from 0.12
-            flavors: 0.15       // Increased from 0.10
+            teaType: 0.2,         // Reduced from 0.45
+            compounds: 0.2,    // Unchanged
+            processing: 0.2,   // Increased from 0.18
+            geography: 0.2,    // Increased from 0.12
+            flavors: 0.2       // Increased from 0.10
         },
         interactionStrengthFactor: 0.8  // Increased from 0.6
     });

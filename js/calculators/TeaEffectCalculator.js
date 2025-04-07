@@ -106,7 +106,8 @@ export class TeaEffectCalculator {
                     processing: {},
                     geography: {}
                 },
-                scoreProgression: {}
+                scoreProgression: {},
+                comparison: null
             };
         }
 
@@ -132,44 +133,16 @@ export class TeaEffectCalculator {
             geography: geographyScores
         };
 
+        // Calculate score progression
+        const scoreProgression = this.calculateScoreProgression(
+            baseScores, processingScores, geographyScores, flavorScores, compoundScores
+        );
+
         // Calculate final scores with weights
-        const finalScores = {};
-        const weights = this.config.get('componentWeights');
-
-        // Initialize score progression with base scores
-        const scoreProgression = {
-            withBaseScores: { ...baseScores }
-        };
-
-        // Add each component's scores progressively
-        let currentScores = { ...baseScores };
+        const finalScores = this.calculateFinalScores(tea);
         
-        // Add processing scores
-        Object.entries(processingScores).forEach(([effect, score]) => {
-            currentScores[effect] = (currentScores[effect] || 0) + score * weights.processing;
-        });
-        scoreProgression.withProcessingScores = { ...currentScores };
-
-        // Add geography scores
-        Object.entries(geographyScores).forEach(([effect, score]) => {
-            currentScores[effect] = (currentScores[effect] || 0) + score * weights.geography;
-        });
-        scoreProgression.withGeographyScores = { ...currentScores };
-
-        // Add flavor scores
-        Object.entries(flavorScores).forEach(([effect, score]) => {
-            currentScores[effect] = (currentScores[effect] || 0) + score * weights.flavors;
-        });
-        scoreProgression.withFlavorScores = { ...currentScores };
-
-        // Add compound scores
-        Object.entries(compoundScores).forEach(([effect, score]) => {
-            currentScores[effect] = (currentScores[effect] || 0) + score * weights.compounds;
-        });
-        scoreProgression.withCompoundScores = { ...currentScores };
-        
-        // Apply interactions
-        const interactionScores = this.interactionCalculator.applyEffectInteractions(tea, currentScores);
+        // Apply interactions after calculating all component scores
+        const interactionScores = this.interactionCalculator.applyEffectInteractions(tea, finalScores);
         
         // Normalize final scores
         Object.keys(interactionScores).forEach(effect => {
@@ -206,6 +179,10 @@ export class TeaEffectCalculator {
         const additionalEffects = sortedEffects
             .slice(3)
             .filter(effect => effect.level >= 4.0);
+        
+        // Compare with expected effects if available
+        const comparison = tea.expectedEffects ? 
+            this.compareWithExpectedEffects(interactionScores, tea.expectedEffects) : null;
 
         return {
             dominantEffect,
@@ -214,8 +191,50 @@ export class TeaEffectCalculator {
             interactions: this.interactionCalculator.getEffectInteractions(tea),
             componentScores,
             scoreProgression,
-            finalScores: interactionScores
+            finalScores: interactionScores,
+            comparison,
+            originalExpectedEffects: tea.expectedEffects // Keep for reference
         };
+    }
+
+    // Helper to calculate score progression
+    calculateScoreProgression(baseScores, processingScores, geographyScores, flavorScores, compoundScores) {
+        const weights = this.config.get('componentWeights');
+        
+        // Initialize with base scores
+        let currentScores = {};
+        Object.entries(baseScores).forEach(([effect, score]) => {
+            currentScores[effect] = score * weights.teaType;
+        });
+        const scoreProgression = {
+            withBaseScores: { ...currentScores }
+        };
+        
+        // Add processing scores
+        Object.entries(processingScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.processing;
+        });
+        scoreProgression.withProcessingScores = { ...currentScores };
+
+        // Add geography scores
+        Object.entries(geographyScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.geography;
+        });
+        scoreProgression.withGeographyScores = { ...currentScores };
+
+        // Add flavor scores
+        Object.entries(flavorScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.flavors;
+        });
+        scoreProgression.withFlavorScores = { ...currentScores };
+
+        // Add compound scores
+        Object.entries(compoundScores).forEach(([effect, score]) => {
+            currentScores[effect] = (currentScores[effect] || 0) + score * weights.compounds;
+        });
+        scoreProgression.withCompoundScores = { ...currentScores };
+        
+        return scoreProgression;
     }
 
     // Format inference as markdown
@@ -230,7 +249,8 @@ export class TeaEffectCalculator {
             additionalEffects,
             interactions,
             componentScores,
-            scoreProgression
+            scoreProgression,
+            comparison
         } = inference;
 
         let markdown = `# Tea Effect Analysis\n\n`;
@@ -249,10 +269,12 @@ export class TeaEffectCalculator {
         if (inference.originalExpectedEffects) {
             markdown += `## Expected Effects\n`;
             
+            // Add expected dominant effect
             if (inference.originalExpectedEffects.dominant) {
                 markdown += `- **Dominant**: ${inference.originalExpectedEffects.dominant}\n`;
             }
             
+            // Add expected supporting effect
             if (inference.originalExpectedEffects.supporting) {
                 const supportingText = Array.isArray(inference.originalExpectedEffects.supporting)
                     ? inference.originalExpectedEffects.supporting.join(', ')
@@ -260,7 +282,24 @@ export class TeaEffectCalculator {
                 markdown += `- **Supporting**: ${supportingText}\n`;
             }
             
-            markdown += '\n';
+            markdown += `\n`;
+        }
+        
+        // Add comparison section if available
+        if (comparison) {
+            markdown += `## Calculation Comparison\n`;
+            
+            markdown += `### Dominant Effect\n`;
+            markdown += `- Expected: **${comparison.dominant.expected}**\n`;
+            markdown += `- Calculated: **${comparison.dominant.calculated}**\n`;
+            markdown += `- Match: ${comparison.dominant.match ? '✓' : '✗'}\n\n`;
+            
+            markdown += `### Supporting Effect\n`;
+            markdown += `- Expected: **${comparison.supporting.expected}**\n`;
+            markdown += `- Calculated: **${comparison.supporting.calculated}**\n`;
+            markdown += `- Match: ${comparison.supporting.match ? '✓' : '✗'}\n\n`;
+            
+            markdown += `Overall Match: ${comparison.matches ? '✓' : '✗'}\n\n`;
         }
         
         // Dominant Effect
@@ -406,80 +445,120 @@ export class TeaEffectCalculator {
         };
     }
 
+    // Calculate baseline effect scores starting with tea type
     calculateBaseScores(tea) {
-        const baseScores = {};
-        const safeTea = {
-            type: tea.type || 'green',
-            compounds: tea.compounds || {},
-            processing: tea.processing || [],
-            flavor: tea.flavor || []
-        };
-
-        // Get base effects for tea type
-        const typeEffects = this.teaTypeEffects[safeTea.type]?.effects || this.teaTypeEffects.green.effects;
-
-        // Apply base effects
-        Object.entries(typeEffects).forEach(([effect, score]) => {
-            baseScores[effect] = score;
-        });
-
-        // Calculate effects based on L-Theanine/Caffeine ratio
-        if (safeTea.compounds.lTheanine && safeTea.compounds.caffeine) {
-            const ratio = safeTea.compounds.lTheanine / safeTea.compounds.caffeine;
-            
-            if (ratio > 1.5) {
-                // L-Theanine dominant effects
-                baseScores.calming = (baseScores.calming || 0) + Math.min(10, safeTea.compounds.lTheanine * 0.8);
-                baseScores.focusing = (baseScores.focusing || 0) + Math.min(10, safeTea.compounds.lTheanine * 0.7);
-            } else if (ratio < 1.0) {
-                // Caffeine dominant effects
-                baseScores.energizing = (baseScores.energizing || 0) + Math.min(10, safeTea.compounds.caffeine * 0.9);
-                baseScores.focusing = (baseScores.focusing || 0) + Math.min(10, safeTea.compounds.caffeine * 0.7);
-            } else {
-                // Balanced effects
-                baseScores.harmonizing = (baseScores.harmonizing || 0) + Math.min(10, (safeTea.compounds.lTheanine + safeTea.compounds.caffeine) * 0.4);
-                baseScores.grounding = (baseScores.grounding || 0) + Math.min(10, (safeTea.compounds.lTheanine + safeTea.compounds.caffeine) * 0.3);
-            }
+        if (!tea) {
+            return {};
         }
-
-        return baseScores;
+        
+        // Use TeaTypeCalculator to get base scores from tea type
+        try {
+            const typeScores = this.teaTypeCalculator.calculateTeaTypeScores(tea);
+            return typeScores;
+        } catch (error) {
+            console.warn(`Error calculating tea type scores: ${error.message}`);
+            
+            // Fallback to empty scores if type calculation fails
+            return {
+                energizing: 0,
+                calming: 0,
+                focusing: 0,
+                harmonizing: 0, 
+                grounding: 0,
+                elevating: 0,
+                comforting: 0,
+                restorative: 0
+            };
+        }
     }
 
+    // Calculate final scores with clear weighting from all components
     calculateFinalScores(tea) {
+        if (!tea) {
+            return {};
+        }
+        
         // Calculate scores from different aspects
         const baseScores = this.calculateBaseScores(tea);
-        const compoundScores = this.compoundCalculator.calculateCompoundScores(tea);
-        const flavorScores = this.flavorCalculator.calculateFlavorScores(tea);
-        const processingScores = this.processingCalculator.calculateProcessingScores(tea);
-        const geographyScores = this.geographyCalculator.calculateGeographyScores(tea);
-
+        const compoundResult = this.compoundCalculator.calculate(tea);
+        const flavorResult = this.flavorCalculator.calculate(tea);
+        const processingResult = this.processingCalculator.calculate(tea);
+        const geographyResult = this.geographyCalculator.calculate(tea);
+        
+        // Extract scores from results
+        const compoundScores = compoundResult.data?.compoundScores || {};
+        const flavorScores = flavorResult.data?.flavorScores || {};
+        const processingScores = processingResult.data?.processingScores || {};
+        const geographyScores = geographyResult.data?.geographyScores || {};
+        
         // Combine scores with weights
         const finalScores = {};
-        const weights = {
-            base: 0.3,
-            compounds: 0.25,
-            flavor: 0.2,
-            processing: 0.15,
-            geography: 0.1
-        };
-
-        // Combine all scores
-        [baseScores, compoundScores, flavorScores, processingScores, geographyScores].forEach((scores, index) => {
-            const weight = Object.values(weights)[index];
-            Object.entries(scores).forEach(([effect, score]) => {
-                finalScores[effect] = (finalScores[effect] || 0) + score * weight;
-            });
+        const weights = this.config.get('componentWeights');
+        
+        // Start with base scores
+        Object.entries(baseScores).forEach(([effect, score]) => {
+            finalScores[effect] = score * weights.teaType;
         });
-
-        // Apply interactions
-        const interactionScores = this.interactionCalculator.applyEffectInteractions(tea, finalScores);
+        
+        // Add compound scores
+        Object.entries(compoundScores).forEach(([effect, score]) => {
+            finalScores[effect] = (finalScores[effect] || 0) + score * weights.compounds;
+        });
+        
+        // Add processing scores
+        Object.entries(processingScores).forEach(([effect, score]) => {
+            finalScores[effect] = (finalScores[effect] || 0) + score * weights.processing;
+        });
+        
+        // Add geography scores
+        Object.entries(geographyScores).forEach(([effect, score]) => {
+            finalScores[effect] = (finalScores[effect] || 0) + score * weights.geography;
+        });
+        
+        // Add flavor scores
+        Object.entries(flavorScores).forEach(([effect, score]) => {
+            finalScores[effect] = (finalScores[effect] || 0) + score * weights.flavors;
+        });
         
         // Normalize final scores
-        Object.keys(interactionScores).forEach(effect => {
-            interactionScores[effect] = Math.min(10, Math.max(0, interactionScores[effect]));
+        Object.keys(finalScores).forEach(effect => {
+            finalScores[effect] = Math.min(10, Math.max(0, finalScores[effect]));
         });
+        
+        return finalScores;
+    }
 
-        return interactionScores;
+    // Add a function to compare calculated results with expected effects
+    compareWithExpectedEffects(calculatedEffects, expectedEffects) {
+        if (!expectedEffects) return null;
+        
+        // Extract dominant and supporting from calculated effects
+        const sortedCalculatedEffects = Object.entries(calculatedEffects)
+            .sort(([, a], [, b]) => b - a);
+        
+        const calculatedDominant = sortedCalculatedEffects[0]?.[0] || null;
+        const calculatedSupporting = sortedCalculatedEffects[1]?.[0] || null;
+        
+        const comparison = {
+            matches: false,
+            dominant: {
+                expected: expectedEffects.dominant,
+                calculated: calculatedDominant,
+                match: false
+            },
+            supporting: {
+                expected: expectedEffects.supporting,
+                calculated: calculatedSupporting,
+                match: false
+            }
+        };
+        
+        // Check for matches
+        comparison.dominant.match = expectedEffects.dominant === calculatedDominant;
+        comparison.supporting.match = expectedEffects.supporting === calculatedSupporting;
+        comparison.matches = comparison.dominant.match && comparison.supporting.match;
+        
+        return comparison;
     }
 
     calculateTeaTypeScores(tea) {

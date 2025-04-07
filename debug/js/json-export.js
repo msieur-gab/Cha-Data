@@ -640,7 +640,7 @@ function generateJsonData(tea) {
             
             // If no effect found, try to find by name
             if (!effect) {
-                const effectByName = primaryEffectsArray.find(e => e && e.name.toLowerCase() === id.toLowerCase());
+                const effectByName = primaryEffectsArray.find(e => e && e.name && e.name.toLowerCase() === id.toLowerCase());
                 if (effectByName) {
                     return {
                         id: effectByName.id,

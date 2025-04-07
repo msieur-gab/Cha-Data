@@ -24,14 +24,22 @@ export class TeaTypeCalculator {
 
         // Handle puerh type mapping
         const teaType = tea.type.toLowerCase();
-        const mappedType = teaType === 'puerh' ? 'puerh-shou' : teaType;
+        let mappedType = teaType;
+        
+        // Map puerh types
+        if (teaType === 'puerh') {
+            // Default to shou if not specified
+            mappedType = 'puerh-shou';
+        } else if (teaType === 'puerh-sheng' || teaType === 'puerh-shou') {
+            mappedType = teaType;
+        }
 
         const typeEffects = this.teaTypeEffects[mappedType];
         if (!typeEffects) {
             throw new Error(`No effects defined for tea type: ${teaType}`);
         }
 
-        // Initialize scores for all effects
+        // Initialize scores with zeros for all 8 consolidated effects
         const scores = {
             energizing: 0,
             calming: 0,
@@ -43,9 +51,13 @@ export class TeaTypeCalculator {
             restorative: 0
         };
 
-        // Apply tea type effects
+        // Apply tea type effects, filtering to only use 8 consolidated effects
         Object.entries(typeEffects.effects).forEach(([effect, score]) => {
-            scores[effect] = score;
+            // Only add effect if it's one of our 8 consolidated effects
+            if (scores.hasOwnProperty(effect)) {
+                scores[effect] = score;
+            }
+            // Ignore any other effects that might be in the data
         });
 
         return this.normalizeScores(scores);

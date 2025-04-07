@@ -202,8 +202,8 @@ export const teaDatabase = [
         harvestMonth: 4
     },
     expectedEffects: {
-        dominant: "elevating",
-        supporting: "energizing"
+        dominant: "energizing",
+        supporting: "elevating"
     }
 },
 

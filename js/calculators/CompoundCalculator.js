@@ -169,26 +169,19 @@ export class CompoundCalculator {
   // Calculate purely compound-based effects
   calculateCompoundEffects(tea) {
     tea = validateObject(tea);
-    if (!this.primaryEffects) {
-      return {};
-    }
     
-    // Create initial scores object with all effects set to 0
-    const scores = {};
-    
-    // If primaryEffects is an array of effect objects
-    if (Array.isArray(this.primaryEffects)) {
-      this.primaryEffects.forEach(effect => {
-        scores[effect.id] = 0;
-      });
-    } 
-    // If primaryEffects is an object keyed by effect ID
-    else if (typeof this.primaryEffects === 'object') {
-      Object.keys(this.primaryEffects).forEach(effectId => {
-        scores[effectId] = 0;
-      });
-    }
-  
+    // Create initial scores object with all 8 consolidated effects set to 0
+    const scores = {
+      energizing: 0,
+      calming: 0,
+      focusing: 0,
+      harmonizing: 0,
+      grounding: 0,
+      elevating: 0,
+      comforting: 0,
+      restorative: 0
+    };
+
     const levels = this.calculateCompoundLevels(tea);
     
     // Calculate Yin/Yang score
@@ -198,180 +191,79 @@ export class CompoundCalculator {
     // Apply TCM effect mapping based on Yin/Yang nature
     if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature]) {
       TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature].forEach(([effect, strength]) => {
-        scores[effect] = (scores[effect] || 0) + strength;
+        // We only care about the 8 consolidated effects, ignore old names
+        if (scores.hasOwnProperty(effect)) {
+          scores[effect] += strength;
+        }
       });
     }
     
-    // Get penalty factors for disharmonious ratios
-    const penaltyDisharmoniousGeneral = 0.7; // Penalty for disharmonious ratios
-    const penaltyDisharmoniousExtreme = 0.5; // Penalty for extreme disharmonious ratios
-    const penaltyExtremelyLowRatio = 0.6;   // Penalty for very low L-theanine to caffeine
-    const penaltyHarmonizingUnbalanced = 0.8; // Penalty for claiming balance when unbalanced
-    const penaltyBalancingExtremeTeas = 0.7; // Penalty for extreme teas claiming to be balanced
-    
-    // Calculate base scores with compounds
-    
-    // If primaryEffects is an array of effect objects
-    if (Array.isArray(this.primaryEffects)) {
-      for (const effect of this.primaryEffects) {
-        let score = 0;
-        let balancingModifier = 1.0;
-        
-        // Apply different adjustment for balancing effect
-        if (effect.id === 'balancing') {
-          // Penalize balancing if not truly balanced
-          if (!levels.balanced) {
-            balancingModifier = penaltyHarmonizingUnbalanced;
-          }
-          
-          // Apply stronger penalty for extreme teas
-          if (levels.extremeTea) {
-            balancingModifier *= penaltyBalancingExtremeTeas;
-          }
-        }
-        
-        // Calculate score from triggers if available
-        if (effect.triggers) {
-          Object.entries(effect.triggers).forEach(([trigger, weight]) => {
-            if (levels[trigger]) {
-              score += weight * balancingModifier;
-              
-              // Apply penalties for disharmonious ratios
-              if (levels.disharmonious) {
-                if (['balancing', 'clarifying'].includes(effect.id)) {
-                  score *= penaltyDisharmoniousGeneral;
-                }
-                if (['peaceful', 'soothing'].includes(effect.id) && levels.extremeRatio) {
-                  score *= penaltyDisharmoniousExtreme;
-                }
-                if (['revitalizing', 'awakening'].includes(effect.id) && levels.veryLowRatio) {
-                  score *= penaltyExtremelyLowRatio; 
-                }
-              }
-            }
-          });
-        }
-        
-        // Add factor to boost effect based on direct L-theanine and caffeine levels
-        if (['soothing', 'peaceful', 'clarifying'].includes(effect.id)) {
-          score += (tea.lTheanineLevel / 10) * 1.8;
-        }
-        
-        if (['revitalizing', 'awakening', 'nurturing'].includes(effect.id)) {
-          score += (tea.caffeineLevel / 10) * 1.8;
-        }
-        
-        // Modified balancing effect calculation from compound balance
-        if (effect.id === 'balancing' && tea.lTheanineLevel >= 4 && tea.caffeineLevel >= 3) {
-          // Calculate the balance value but with more penalties for imbalance
-          const difference = Math.abs(tea.lTheanineLevel - tea.caffeineLevel);
-          
-          // Only boost substantially if truly in balance
-          if (difference <= 1.5) {
-            const balance = 10 - (difference * 2); // More severe penalty for difference
-            score += (balance / 10) * 1.5;
-          } else {
-            // Much smaller boost for larger differences
-            score += 0.3; 
-          }
-        }
-        
-        scores[effect.id] = score;
-      }
-    }
-    // If primaryEffects is an object keyed by effect ID
-    else if (typeof this.primaryEffects === 'object') {
-      Object.entries(this.primaryEffects).forEach(([effectId, effectData]) => {
-        let score = 0;
-        let balancingModifier = 1.0;
-        
-        // Apply different adjustment for balancing effect
-        if (effectId === 'balancing') {
-          // Penalize balancing if not truly balanced
-          if (!levels.balanced) {
-            balancingModifier = penaltyHarmonizingUnbalanced;
-          }
-          
-          // Apply stronger penalty for extreme teas
-          if (levels.extremeTea) {
-            balancingModifier *= penaltyBalancingExtremeTeas;
-          }
-        }
-        
-        // Calculate score from triggers if available
-        if (effectData.triggers) {
-          Object.entries(effectData.triggers).forEach(([trigger, weight]) => {
-            if (levels[trigger]) {
-              score += weight * balancingModifier;
-              
-              // Apply penalties for disharmonious ratios
-              if (levels.disharmonious) {
-                if (['balancing', 'clarifying'].includes(effectId)) {
-                  score *= penaltyDisharmoniousGeneral;
-                }
-                if (['peaceful', 'soothing'].includes(effectId) && levels.extremeRatio) {
-                  score *= penaltyDisharmoniousExtreme;
-                }
-                if (['revitalizing', 'awakening'].includes(effectId) && levels.veryLowRatio) {
-                  score *= penaltyExtremelyLowRatio; 
-                }
-              }
-            }
-          });
-        }
-        
-        // Add factor to boost effect based on direct L-theanine and caffeine levels
-        if (['soothing', 'peaceful', 'clarifying'].includes(effectId)) {
-          score += (tea.lTheanineLevel / 10) * 1.8;
-        }
-        
-        if (['revitalizing', 'awakening', 'nurturing'].includes(effectId)) {
-          score += (tea.caffeineLevel / 10) * 1.8;
-        }
-        
-        // Modified balancing effect calculation from compound balance
-        if (effectId === 'balancing' && tea.lTheanineLevel >= 4 && tea.caffeineLevel >= 3) {
-          // Calculate the balance value but with more penalties for imbalance
-          const difference = Math.abs(tea.lTheanineLevel - tea.caffeineLevel);
-          
-          // Only boost substantially if truly in balance
-          if (difference <= 1.5) {
-            const balance = 10 - (difference * 2); // More severe penalty for difference
-            score += (balance / 10) * 1.5;
-          } else {
-            // Much smaller boost for larger differences
-            score += 0.3; 
-          }
-        }
-        
-        scores[effectId] = score;
-      });
+    // Apply compound level based effects
+    if (levels.highLTheanine) {
+      scores.calming += 2.5;
+      scores.focusing += 1.5;
+      scores.restorative += 1.0;
+    } else if (levels.moderateLTheanine) {
+      scores.calming += 1.5;
+      scores.focusing += 1.0;
+      scores.harmonizing += 0.8;
     }
     
-    // If no primary effects data is available, provide some basic scores based on ratio
-    if (Object.keys(scores).length === 0) {
-      // Create some minimal effect scores based on ratios
-      if (levels.highLTheanine) {
-        scores.peaceful = (tea.lTheanineLevel / 10) * 5;
-        scores.soothing = (tea.lTheanineLevel / 10) * 4.5;
-      }
-      
-      if (levels.highCaffeine) {
-        scores.revitalizing = (tea.caffeineLevel / 10) * 5;
-        scores.awakening = (tea.caffeineLevel / 10) * 4.5;
-      }
-      
-      if (levels.balanced) {
-        scores.balancing = Math.min(tea.lTheanineLevel, tea.caffeineLevel) / 10 * 5;
-      }
+    if (levels.highCaffeine) {
+      scores.energizing += 2.5;
+      scores.focusing += 1.0;
+      scores.elevating += 0.8;
+    } else if (levels.moderateCaffeine) {
+      scores.energizing += 1.5;
+      scores.focusing += 0.8;
     }
     
-    // Cap all scores to 10
-    Object.keys(scores).forEach(key => {
-      scores[key] = Math.min(10, Math.max(0, scores[key]));
-    });
+    // Balanced effects
+    if (levels.balanced) {
+      scores.harmonizing += 2.0;
+      scores.focusing += 1.0;
+      scores.grounding += 0.8;
+    }
+    
+    // Extreme effects
+    if (levels.extremeRatio) {
+      scores.calming += 2.2;
+      scores.restorative += 1.5;
+    } else if (levels.veryLowRatio) {
+      scores.energizing += 2.5;
+      scores.focusing += 1.2;
+    }
     
     return scores;
+  }
+  
+  // Calculate compound scores for final output
+  calculateCompoundScores(inference) {
+    if (!inference || !inference.effects) {
+      return {};
+    }
+    
+    // Map to the 8 consolidated effects
+    const consolidatedScores = {
+      energizing: 0,
+      calming: 0,
+      focusing: 0,
+      harmonizing: 0,
+      grounding: 0,
+      elevating: 0,
+      comforting: 0,
+      restorative: 0
+    };
+    
+    // Only copy scores that match our consolidated effects
+    Object.entries(inference.effects).forEach(([effect, score]) => {
+      if (consolidatedScores.hasOwnProperty(effect)) {
+        consolidatedScores[effect] += score;
+      }
+      // Ignore any old effect names
+    });
+    
+    return consolidatedScores;
   }
   
   // Return a detailed explanation of compound effects for UI display
@@ -413,87 +305,6 @@ export class CompoundCalculator {
                         levels.balanced ? 'balanced' : 
                         ratio > 1.8 ? 'calming-leaning' : 'stimulating-leaning'
     };
-  }
-
-  calculateCompoundScores(tea) {
-    const compoundScores = {};
-    const safeTea = {
-      compounds: tea.compounds || {},
-      processing: tea.processing || [],
-      flavor: tea.flavor || []
-    };
-
-    // Helper function to add compound scores
-    const addCompoundScore = (effect, score) => {
-      compoundScores[effect] = (compoundScores[effect] || 0) + score;
-    };
-
-    // Process L-Theanine effects
-    if (safeTea.compounds.lTheanine) {
-      const lTheanineLevel = safeTea.compounds.lTheanine;
-      addCompoundScore("calming", Math.min(10, lTheanineLevel * 0.6));
-      addCompoundScore("focusing", Math.min(10, lTheanineLevel * 0.5));
-    }
-
-    // Process Caffeine effects
-    if (safeTea.compounds.caffeine) {
-      const caffeineLevel = safeTea.compounds.caffeine;
-      addCompoundScore("energizing", Math.min(10, caffeineLevel * 0.7));
-      addCompoundScore("focusing", Math.min(10, caffeineLevel * 0.5));
-    }
-
-    // Process EGCG effects
-    if (safeTea.compounds.egcg) {
-      const egcgLevel = safeTea.compounds.egcg;
-      addCompoundScore("focusing", Math.min(10, egcgLevel * 0.4));
-      addCompoundScore("restorative", Math.min(10, egcgLevel * 0.3));
-    }
-
-    // Process Theanine/Caffeine ratio effects
-    if (safeTea.compounds.lTheanine && safeTea.compounds.caffeine) {
-      const ratio = safeTea.compounds.lTheanine / safeTea.compounds.caffeine;
-      if (ratio > 1.5) {
-        addCompoundScore("calming", 2.0);
-        addCompoundScore("focusing", 1.5);
-      } else if (ratio < 1.0) {
-        addCompoundScore("energizing", 2.0);
-        addCompoundScore("focusing", 1.5);
-      } else {
-        addCompoundScore("harmonizing", 2.0);
-        addCompoundScore("grounding", 1.5);
-      }
-    }
-
-    // Process other compounds
-    if (safeTea.compounds.theobromine) {
-      const theobromineLevel = safeTea.compounds.theobromine;
-      addCompoundScore("comforting", Math.min(10, theobromineLevel * 0.4));
-      addCompoundScore("elevating", Math.min(10, theobromineLevel * 0.3));
-    }
-
-    if (safeTea.compounds.gaba) {
-      const gabaLevel = safeTea.compounds.gaba;
-      addCompoundScore("calming", Math.min(10, gabaLevel * 0.5));
-      addCompoundScore("grounding", Math.min(10, gabaLevel * 0.4));
-    }
-
-    // Apply processing-specific compound adjustments
-    if (safeTea.processing.includes('shade-grown')) {
-      addCompoundScore("focusing", 1.5);
-      addCompoundScore("calming", 1.0);
-    }
-
-    if (safeTea.processing.includes('heavy-roast')) {
-      addCompoundScore("grounding", 2.0);
-      addCompoundScore("comforting", 1.5);
-    }
-
-    // Normalize scores
-    Object.keys(compoundScores).forEach(effect => {
-      compoundScores[effect] = Math.min(10, Math.max(0, compoundScores[effect]));
-    });
-
-    return compoundScores;
   }
 }
 

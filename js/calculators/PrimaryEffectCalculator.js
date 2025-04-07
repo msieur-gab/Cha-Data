@@ -5,27 +5,25 @@
 import TeaGlobalMapping from '../props/TeaGlobalMapping.js';
 import { validateObject } from '../utils/helpers.js';
 
-// Define tea type specific effects
+// Define tea type specific effects using the 8 consolidated effects
 const teaTypeEffects = {
-  'white': { 'peaceful': 1.8, 'soothing': 1.5 },
-  'green': { 'soothing': 1.5, 'clarifying': 1.3 },
-  'oolong': { 'elevating': 1.5, 'balancing': 1.2 },
-  'black': { 'revitalizing': 1.8, 'awakening': 1.5 },
-  'puerh': { 'centering': 1.8, 'stabilizing': 1.5 }
+  'white': { 'calming': 1.8, 'restorative': 1.5 },
+  'green': { 'calming': 1.5, 'focusing': 1.3 },
+  'oolong': { 'elevating': 1.5, 'harmonizing': 1.2 },
+  'black': { 'energizing': 1.8, 'focusing': 1.5 },
+  'puerh': { 'grounding': 1.8, 'comforting': 1.5 }
 };
 
-// Define common effect pairings for better supporting effect prediction
+// Define common effect pairings for better supporting effect prediction using the 8 consolidated effects
 const effectPairings = {
-  'soothing': ['clarifying', 'peaceful', 'restorative'],
-  'peaceful': ['soothing', 'restorative', 'elevating'],
-  'elevating': ['peaceful', 'awakening', 'clarifying'],
-  'nurturing': ['centering', 'comforting', 'balancing'],
-  'revitalizing': ['awakening', 'elevating', 'renewing'],
-  'centering': ['stabilizing', 'reflective', 'balancing'],
-  'balancing': ['peaceful', 'centering', 'clarifying'],
-  'awakening': ['revitalizing', 'elevating', 'clarifying'],
-  'clarifying': ['awakening', 'soothing', 'elevating'],
-  'stabilizing': ['centering', 'grounding', 'nurturing']
+  'calming': ['focusing', 'restorative', 'harmonizing'],
+  'energizing': ['focusing', 'elevating', 'harmonizing'],
+  'elevating': ['energizing', 'harmonizing', 'focusing'],
+  'comforting': ['grounding', 'restorative', 'harmonizing'],
+  'focusing': ['energizing', 'calming', 'elevating'],
+  'grounding': ['comforting', 'harmonizing', 'calming'],
+  'harmonizing': ['calming', 'grounding', 'focusing'],
+  'restorative': ['calming', 'comforting', 'harmonizing']
 };
 
 export class PrimaryEffectCalculator {
@@ -74,7 +72,7 @@ export class PrimaryEffectCalculator {
 
         if (!isValid) {
             console.warn(`PrimaryEffectCalculator: Missing mandatory data for tea: ${tea?.name || 'Unknown'}. Returning default effects.`);
-            return { dominant: 'balancing', supporting: null }; // Default if mandatory data missing
+            return { dominant: 'harmonizing', supporting: null }; // Default if mandatory data missing
         }
 
         // Create a safe copy for calculations
@@ -123,8 +121,8 @@ export class PrimaryEffectCalculator {
         const sortedEffects = Object.entries(effectScores).sort((a, b) => b[1] - a[1]);
 
         if (sortedEffects.length === 0 || sortedEffects[0][1] <= 0) {
-            // If no effects scored positively, default to balancing
-            return { dominant: 'balancing', supporting: null };
+            // If no effects scored positively, default to harmonizing
+            return { dominant: 'harmonizing', supporting: null };
         }
 
         const dominant = sortedEffects[0][0];
