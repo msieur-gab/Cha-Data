@@ -511,30 +511,30 @@ function generateJsonData(tea) {
     
     // L-Theanine dominant effects
     if (ratio > 1.5) {
-        baseScores["peaceful"] = baseScores["peaceful"] || 0;
-        baseScores["peaceful"] += Math.min(10, tea.lTheanineLevel * 0.8);
+        baseScores["calming"] = baseScores["calming"] || 0;
+        baseScores["calming"] += Math.min(10, tea.lTheanineLevel * 0.8);
         
-        baseScores["soothing"] = baseScores["soothing"] || 0;
-        baseScores["soothing"] += Math.min(10, tea.lTheanineLevel * 0.7);
+        baseScores["restorative"] = baseScores["restorative"] || 0;
+        baseScores["restorative"] += Math.min(10, tea.lTheanineLevel * 0.7);
     }
     
     // Caffeine dominant effects
     if (ratio < 1.0) {
-        baseScores["revitalizing"] = baseScores["revitalizing"] || 0;
-        baseScores["revitalizing"] += Math.min(10, tea.caffeineLevel * 0.9);
+        baseScores["energizing"] = baseScores["energizing"] || 0;
+        baseScores["energizing"] += Math.min(10, tea.caffeineLevel * 0.9);
         
-        baseScores["awakening"] = baseScores["awakening"] || 0; 
-        baseScores["awakening"] += Math.min(10, tea.caffeineLevel * 0.7);
+        baseScores["focusing"] = baseScores["focusing"] || 0; 
+        baseScores["focusing"] += Math.min(10, tea.caffeineLevel * 0.7);
     }
     
     // Add processing method influences (simplified version)
     if (tea.processingMethods.includes("shade-grown")) {
-        baseScores["clarifying"] = (baseScores["clarifying"] || 0) + 3;
+        baseScores["focusing"] = (baseScores["focusing"] || 0) + 3;
     }
     
     if (tea.processingMethods.includes("heavy-roast")) {
-        baseScores["nurturing"] = (baseScores["nurturing"] || 0) + 3;
-        baseScores["centering"] = (baseScores["centering"] || 0) + 2;
+        baseScores["comforting"] = (baseScores["comforting"] || 0) + 3;
+        baseScores["grounding"] = (baseScores["grounding"] || 0) + 2;
     }
     
     if (tea.processingMethods.includes("minimal-processing") || tea.processingMethods.includes("minimal-roast")) {
@@ -542,7 +542,7 @@ function generateJsonData(tea) {
     }
     
     if (tea.processingMethods.includes("aged")) {
-        baseScores["stabilizing"] = (baseScores["stabilizing"] || 0) + 3;
+        baseScores["grounding"] = (baseScores["grounding"] || 0) + 3;
     }
     
     // 2. Get the component weights matching debug.js
@@ -662,7 +662,7 @@ function generateJsonData(tea) {
         .sort((a, b) => b.level - a.level);
     
     // 9. Create the final effect structure
-    const dominantEffect = sortedEffects[0] || { id: 'balanced', name: 'Balanced', description: 'A balanced state of mind and body', level: 5 };
+    const dominantEffect = sortedEffects[0] || { id: 'harmonizing', name: 'Harmonizing', description: 'Creates equilibrium between opposing forces', level: 5 };
     const supportingEffects = sortedEffects.slice(1, 3)
         .filter(effect => effect.level >= config.get('supportingEffectThreshold', 3.5))
         .map(effect => ({

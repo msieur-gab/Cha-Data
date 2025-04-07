@@ -219,6 +219,14 @@ export async function generateEnhancedEffectsReport(progressCallback) {
                     report += "- Increase grounding contribution from aged/fermented processing methods\n";
                 } else if (expectedDominant === "elevating") {
                     report += "- Increase elevating contribution from floral/fruity flavors and light processing\n";
+                } else if (expectedDominant === "energizing") {
+                    report += "- Increase energizing contribution from high-caffeine content and citrus/spicy flavors\n";
+                } else if (expectedDominant === "calming") {
+                    report += "- Increase calming contribution from high L-theanine content and minimal-processing methods\n";
+                } else if (expectedDominant === "harmonizing") {
+                    report += "- Increase harmonizing contribution from balanced L-theanine and caffeine levels\n";
+                } else if (expectedDominant === "restorative") {
+                    report += "- Increase restorative contribution from shade-grown processing and umami/mineral flavors\n";
                 }
             } else {
                 report += `Expected dominant effect '${expectedDominant}' is not in the top calculated effects at all.\n`;

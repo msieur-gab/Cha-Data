@@ -52,31 +52,32 @@ export function simulateTeaEffects() {
     const baseScores = {};
     
     if (ratio > 1.5) {
-      baseScores['peaceful'] = Math.min(10, tea.lTheanineLevel * 0.8);
-      baseScores['soothing'] = Math.min(10, tea.lTheanineLevel * 0.7);
+      baseScores['calming'] = Math.min(10, tea.lTheanineLevel * 0.8);
+      baseScores['restorative'] = Math.min(10, tea.lTheanineLevel * 0.7);
     }
     
     if (ratio < 1.0) {
-      baseScores['revitalizing'] = Math.min(10, tea.caffeineLevel * 0.9);
-      baseScores['awakening'] = Math.min(10, tea.caffeineLevel * 0.7);
+      baseScores['energizing'] = Math.min(10, tea.caffeineLevel * 0.9);
+      baseScores['focusing'] = Math.min(10, tea.caffeineLevel * 0.7);
     }
     
-    // Add processing method influences without expected effects
+    // Add processing method influences
     if (tea.processingMethods.includes('shade-grown')) {
-      baseScores['clarifying'] = (baseScores['clarifying'] || 0) + 3;
+      baseScores['focusing'] = (baseScores['focusing'] || 0) + 3;
     }
     
     if (tea.processingMethods.includes('heavy-roast')) {
-      baseScores['nurturing'] = (baseScores['nurturing'] || 0) + 3;
-      baseScores['centering'] = (baseScores['centering'] || 0) + 2;
+      baseScores['comforting'] = (baseScores['comforting'] || 0) + 3;
+      baseScores['grounding'] = (baseScores['grounding'] || 0) + 2;
     }
     
-    if (tea.processingMethods.includes('minimal-processing') || tea.processingMethods.includes('minimal-roast')) {
+    if (tea.processingMethods.includes('minimal-processing') || 
+        tea.processingMethods.includes('minimal-roast')) {
       baseScores['elevating'] = (baseScores['elevating'] || 0) + 2;
     }
     
     if (tea.processingMethods.includes('aged')) {
-      baseScores['stabilizing'] = (baseScores['stabilizing'] || 0) + 3;
+      baseScores['grounding'] = (baseScores['grounding'] || 0) + 3;
     }
     
     // Test each weight combination

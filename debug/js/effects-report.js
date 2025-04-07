@@ -41,7 +41,7 @@ export async function generateEffectsReport(progressCallback) {
     report += '  Base: [Dominant (score)] / [Supporting (score)]\n';
     report += '=====================================================\n\n';
 
-    // Calculate accuracy metrics
+    // Initialize accuracy metrics
     let totalTeas = 0;
     let finalDominantMatches = 0;
     let finalSupportingMatches = 0;
@@ -49,6 +49,13 @@ export async function generateEffectsReport(progressCallback) {
     let baseDominantMatches = 0;
     let baseSupportingMatches = 0;
     let baseBothMatches = 0;
+    
+    // Default effects object with placeholder values
+    let effects = {
+        dominant: { id: 'none', score: 0 },
+        supporting: { id: 'none', score: 0 },
+        allScores: {}
+    };
     
     // Detailed report data
     const teaReports = [];
@@ -73,7 +80,7 @@ export async function generateEffectsReport(progressCallback) {
             const teaTypeEffects = result.componentScores?.teaType || {};
             const topTeaTypeEffects = getTopEffects(teaTypeEffects);
             
-            const effects = {
+            effects = {
                 dominant: topTeaTypeEffects[0] || { id: 'none', score: 0 },
                 supporting: topTeaTypeEffects[1] || { id: 'none', score: 0 },
                 allScores: { ...teaTypeEffects }
