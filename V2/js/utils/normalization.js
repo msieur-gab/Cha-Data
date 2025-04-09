@@ -96,8 +96,22 @@ export function enhanceDominantEffect(scores, dominantId) {
         }
     }
     
-    // Enhance the dominant effect
-    enhancedScores[dominantId] = Math.min(9.5, enhancedScores[dominantId] * 1.05);
+    // Check if the dominant effect has a significant lead over the second effect
+    // Only enhance if there's a meaningful gap between dominant and supporting
+    if (sortedEffects.length > 1) {
+        const [, dominantScore] = sortedEffects[0];
+        const [, supportingScore] = sortedEffects[1];
+        
+        // Only enhance if the dominant effect is at least 1.0 points higher
+        // This prevents artificially enhancing effects that are very close in score
+        if (dominantScore - supportingScore >= 1.0) {
+            // Use a more subtle enhancement multiplier
+            enhancedScores[dominantId] = Math.min(9.5, enhancedScores[dominantId] * 1.03);
+        }
+    } else {
+        // If there's only one effect, use a subtle enhancement
+        enhancedScores[dominantId] = Math.min(9.5, enhancedScores[dominantId] * 1.03);
+    }
     
     // Adjust supporting effects to maintain a hierarchy
     // Find the index of the dominant effect
@@ -106,7 +120,9 @@ export function enhanceDominantEffect(scores, dominantId) {
     // If we have supporting effects, enhance them slightly (but less than dominant)
     if (dominantIndex === 0 && sortedEffects.length > 1) {
         const [supportingId, supportingScore] = sortedEffects[1];
-        enhancedScores[supportingId] = Math.min(9.0, supportingScore * 1.02);
+        
+        // More subtle enhancement for supporting effect
+        enhancedScores[supportingId] = Math.min(9.0, supportingScore * 1.01);
         
         // Make sure the supporting effect score doesn't exceed the dominant score
         if (enhancedScores[supportingId] >= enhancedScores[dominantId]) {
@@ -116,7 +132,7 @@ export function enhanceDominantEffect(scores, dominantId) {
         // If we have a second supporting effect, enhance it very slightly
         if (sortedEffects.length > 2) {
             const [supporting2Id, supporting2Score] = sortedEffects[2];
-            enhancedScores[supporting2Id] = Math.min(8.5, supporting2Score * 1.01);
+            enhancedScores[supporting2Id] = Math.min(8.5, supporting2Score * 1.005);
             
             // Make sure the second supporting effect doesn't exceed the first supporting effect
             if (enhancedScores[supporting2Id] >= enhancedScores[supportingId]) {

@@ -200,38 +200,43 @@ export class CompoundCalculator {
     
     // Apply compound level based effects
     if (levels.highLTheanine) {
-      scores.calming += 2.5;
+      scores.calming += 3.0;       // Increased from 2.5
       scores.focusing += 1.5;
-      scores.restorative += 1.0;
+      scores.restorative += 1.5;   // Increased from 1.0
+      scores.elevating += 1.0;     // Added to boost elevating effects
     } else if (levels.moderateLTheanine) {
-      scores.calming += 1.5;
+      scores.calming += 2.0;       // Increased from 1.5
       scores.focusing += 1.0;
-      scores.harmonizing += 0.8;
+      scores.harmonizing += 1.0;   // Increased from 0.8
+      scores.restorative += 0.8;   // Added for more balance
     }
     
     if (levels.highCaffeine) {
-      scores.energizing += 2.5;
-      scores.focusing += 1.0;
-      scores.elevating += 0.8;
+      scores.energizing += 2.0;    // Decreased from 2.5
+      scores.focusing += 1.2;      // Increased from 1.0
+      scores.elevating += 1.0;     // Increased from 0.8
     } else if (levels.moderateCaffeine) {
-      scores.energizing += 1.5;
-      scores.focusing += 0.8;
+      scores.energizing += 1.2;    // Decreased from 1.5
+      scores.focusing += 1.0;      // Increased from 0.8
     }
     
     // Balanced effects
     if (levels.balanced) {
-      scores.harmonizing += 2.0;
-      scores.focusing += 1.0;
-      scores.grounding += 0.8;
+      scores.harmonizing += 2.5;   // Increased from 2.0
+      scores.focusing += 1.2;      // Increased from 1.0
+      scores.grounding += 1.0;     // Increased from 0.8
+      scores.elevating += 0.8;     // Added to boost elevating effects
     }
     
     // Extreme effects
     if (levels.extremeRatio) {
-      scores.calming += 2.2;
-      scores.restorative += 1.5;
+      scores.calming += 2.5;       // Increased from 2.2
+      scores.restorative += 2.0;   // Increased from 1.5
+      scores.grounding += 1.0;     // Added grounding effect
     } else if (levels.veryLowRatio) {
-      scores.energizing += 2.5;
-      scores.focusing += 1.2;
+      scores.energizing += 2.0;    // Decreased from 2.5
+      scores.focusing += 1.5;      // Increased from 1.2
+      scores.elevating += 1.0;     // Added elevating effect
     }
     
     return scores;

@@ -8,7 +8,33 @@ import mapEffectCombinations from '../utils/EffectInteractionMapper.js';
 export class InteractionCalculator extends BaseCalculator {
     constructor(config) {
         super(config);
-        this.effectCombinations = {};
+        this.effectCombinations = {
+            "calming+focusing": {
+                name: "Mindful Tranquility",
+                description: "A state of calm alertness with enhanced mental clarity",
+                modifies: [
+                    { target: "focusing", modifier: 0.5 }, // Boost focusing
+                    { target: "energizing", modifier: -0.3 } // Reduce energizing
+                ]
+            },
+            
+            "floral+fruity": {
+                name: "Uplifting Aroma",
+                description: "A combination that creates pronounced elevating effects",
+                modifies: [
+                    { target: "elevating", modifier: 0.7 } // Significant boost to elevating
+                ]
+            },
+            
+            "earthy+woody": {
+                name: "Grounding Foundation",
+                description: "A deeply centering combination with pronounced grounding effects",
+                modifies: [
+                    { target: "grounding", modifier: 0.8 }, // Boost grounding
+                    { target: "comforting", modifier: 0.5 } // Boost comforting
+                ]
+            }
+        };
         this.effectInteractionRules = {
             complementary: {
                 energizing: ['focusing', 'elevating'],

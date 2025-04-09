@@ -76,6 +76,31 @@ export class TeaEffectCalculator extends BaseCalculator {
         } else {
             this.geographicalInfluences = {};
         }
+        
+        // Initialize the calculators with their specific data
+        if (this.teaTypeCalculator) {
+            this.teaTypeCalculator.setTeaTypeEffects(this.teaTypeEffects);
+        }
+        
+        if (this.flavorCalculator) {
+            this.flavorCalculator.setFlavorInfluences(this.flavorInfluences);
+        }
+        
+        if (this.processingCalculator) {
+            // Pass both the processing influences and the mapping to primary effects
+            const processingToPrimaryEffectMap = processingInfluences?.processingToPrimaryEffectMap || {};
+            const processingInfluencesData = processingInfluences?.processingInfluences || processingInfluences || {};
+            
+            this.processingCalculator.setProcessingEffects(processingInfluencesData, processingToPrimaryEffectMap);
+        }
+        
+        if (this.geographyCalculator) {
+            this.geographyCalculator.setGeographicalInfluences(this.geographicalInfluences);
+        }
+        
+        if (this.interactionCalculator) {
+            this.interactionCalculator.setEffectCombinations(this.effectCombinations);
+        }
     }
 
     // Override infer method from BaseCalculator
@@ -192,13 +217,13 @@ export class TeaEffectCalculator extends BaseCalculator {
     calculateScoreProgression(baseScores, processingScores, geographyScores, flavorScores, compoundScores, seasonalScores = {}) {
         const weights = this.config.get('componentWeights');
         
-        // Initialize with base scores
+        // Initialize with base scores (tea type effects)
         let currentScores = {};
         Object.entries(baseScores).forEach(([effect, score]) => {
             currentScores[effect] = score * weights.teaType;
         });
         const scoreProgression = {
-            withBaseScores: { ...currentScores }
+            withTeaTypeScores: { ...currentScores }
         };
         
         // Add processing scores
@@ -376,6 +401,51 @@ export class TeaEffectCalculator extends BaseCalculator {
         Object.entries(seasonalScores).forEach(([effect, score]) => {
             finalScores[effect] = (finalScores[effect] || 0) + score * (weights.seasonal || 0.1);
         });
+        
+        // Apply effect balancing adjustments
+        if (finalScores.energizing) {
+            finalScores.energizing *= 0.85; // Reduce by 15%
+        }
+        
+        if (finalScores.elevating) {
+            finalScores.elevating *= 1.5; // Boost by 50%
+        }
+        
+        if (finalScores.comforting) {
+            finalScores.comforting *= 1.4; // Boost by 40%
+        }
+        
+        if (finalScores.grounding) {
+            finalScores.grounding *= 1.35; // Boost by 35%
+        }
+        
+        // Apply Tea-Type Specific Adjustments
+        if (tea.type && tea.processingMethods) {
+            // For shade-grown Japanese teas (Gyokuro, Matcha)
+            if (tea.type === 'green' && 
+                tea.processingMethods.includes('shade-grown') && 
+                tea.origin?.includes('Japan')) {
+                finalScores.focusing = (finalScores.focusing || 0) * 1.3;
+                finalScores.elevating = (finalScores.elevating || 0) * 1.4;
+            }
+
+            // For Dan Cong oolongs
+            if (tea.type === 'oolong' && tea.name?.includes('Dan Cong')) {
+                finalScores.elevating = (finalScores.elevating || 0) * 1.5;
+            }
+
+            // For puerh teas
+            if (tea.type.includes('puerh')) {
+                finalScores.grounding = (finalScores.grounding || 0) * 1.4;
+                
+                // Specifically for aged puerh
+                if (tea.processingMethods.includes('aged') || 
+                    tea.processingMethods.includes('pile-fermented')) {
+                    finalScores.grounding = (finalScores.grounding || 0) * 1.3;
+                    finalScores.comforting = (finalScores.comforting || 0) * 1.3;
+                }
+            }
+        }
         
         // Normalize scores
         if (this.config.get('normalizeScores', true)) {

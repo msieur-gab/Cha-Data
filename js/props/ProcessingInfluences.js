@@ -5,8 +5,8 @@ export const processingInfluences = {
     // Heat Treatment Methods
     'steamed': {
         effects: {
-            clarifying: 3.0, 
-            peaceful: 2.5
+            focusing: 3.0,   // Was clarifying
+            calming: 2.5     // Was peaceful
         },
         intensity: 1.9,
         category: 'heat',
@@ -20,8 +20,8 @@ export const processingInfluences = {
     },
     'pan-fired': {
         effects: {
-            revitalizing: 2.8, 
-            awakening: 2.2
+            energizing: 2.6,   // Was revitalizing, slightly reduced
+            focusing: 2.2      // Was awakening, changed to focusing
         },
         intensity: 1.2,
         category: 'heat',
@@ -29,8 +29,9 @@ export const processingInfluences = {
     },
     'light-roast': {
         effects: {
-            peaceful: 2.5, 
-            reflective: 2.2
+            calming: 2.5,       // Was peaceful
+            elevating: 2.5,     // Added elevating effect
+            grounding: 2.0      // Was reflective
         },
         intensity: 1.0,
         category: 'heat',
@@ -38,8 +39,9 @@ export const processingInfluences = {
     },
     'medium-roast': {
         effects: {
-            nurturing: 2.8, 
-            balancing: 2.2
+            comforting: 2.8,     // Was nurturing  
+            harmonizing: 2.2,    // Was balancing
+            grounding: 2.0       // Added grounding effect
         },
         intensity: 1.5,
         category: 'heat',
@@ -53,8 +55,9 @@ export const processingInfluences = {
     },
     'heavy-roast': {
         effects: {
-            nurturing: 3.2, 
-            centering: 2.5
+            comforting: 3.5,     // Was nurturing, boosted  
+            grounding: 3.0,      // Was centering, boosted
+            harmonizing: 1.5     // Added harmonizing
         },
         intensity: 1.8,
         category: 'heat',
@@ -68,8 +71,9 @@ export const processingInfluences = {
     },
     'charcoal-roasted': {
         effects: {
-            nurturing: 3.0, 
-            reflective: 2.8
+            comforting: 3.5,     // Was nurturing, boosted
+            grounding: 3.0,      // Was reflective, boosted and changed
+            harmonizing: 2.0     // Added harmonizing
         },
         intensity: 2.2,
         category: 'heat',
@@ -78,8 +82,9 @@ export const processingInfluences = {
     // Sun Processing Methods
     'sun-dried': {
         effects: {
-            peaceful: 2.5,
-            renewing: 2.2
+            calming: 2.5,        // Was peaceful
+            restorative: 2.5,    // Was renewing, increased
+            elevating: 2.0       // Added elevating
         },
         intensity: 1.6,
         category: 'drying',
@@ -95,8 +100,9 @@ export const processingInfluences = {
     // Oxidation Methods
     'withered': {
         effects: {
-            peaceful: 2.5, 
-            balancing: 2.2
+            calming: 2.5,        // Was peaceful
+            harmonizing: 2.2,    // Was balancing
+            elevating: 1.5       // Added elevating
         },
         intensity: 1.2,
         category: 'oxidation',
@@ -110,8 +116,9 @@ export const processingInfluences = {
     },
     'oxidised': {
         effects: {
-            revitalizing: 3.0, 
-            awakening: 2.5
+            energizing: 3.0,     // Was revitalizing
+            focusing: 2.5,       // Was awakening, changed to focusing
+            elevating: 2.0       // Added elevating
         },
         intensity: 1.5,
         category: 'oxidation',
@@ -119,8 +126,9 @@ export const processingInfluences = {
     },
     'partial-oxidation': {
         effects: {
-            balancing: 3.0, 
-            reflective: 2.2
+            harmonizing: 3.0,    // Was balancing
+            grounding: 2.2,      // Was reflective, changed to grounding
+            elevating: 2.0       // Added elevating
         },
         intensity: 1.3,
         category: 'oxidation',
@@ -134,8 +142,9 @@ export const processingInfluences = {
     },
     'full-oxidation': {
         effects: {
-            revitalizing: 3.5, 
-            nurturing: 2.5
+            energizing: 3.0,     // Was revitalizing, decreased a bit
+            comforting: 2.5,     // Was nurturing
+            grounding: 2.0       // Added grounding
         },
         intensity: 1.7,
         category: 'oxidation',
@@ -149,8 +158,8 @@ export const processingInfluences = {
     },
     'kill-green': {
         effects: {
-            clarifying: 2.8, 
-            soothing: 2.2
+            focusing: 2.8,       // Was clarifying
+            calming: 2.2         // Was soothing
         },
         intensity: 1.4,
         category: 'oxidation',
@@ -160,8 +169,9 @@ export const processingInfluences = {
     // Growing and Processing Methods
     'shade-grown': {
         effects: {
-            clarifying: 3.5, 
-            soothing: 2.8
+            focusing: 3.5,       // Was clarifying
+            calming: 3.0,        // Was soothing, increased
+            elevating: 2.5       // Added elevating
         },
         intensity: 2.5,
         category: 'growing',
@@ -175,8 +185,9 @@ export const processingInfluences = {
     },
     'minimal-processing': {
         effects: {
-            elevating: 2.8, 
-            peaceful: 2.2
+            elevating: 3.0,     // Increased from 2.8
+            calming: 2.2,       // Was peaceful
+            focusing: 2.0       // Added focusing
         },
         intensity: 2.0,
         category: 'processing',
@@ -190,8 +201,8 @@ export const processingInfluences = {
     },
     'gaba-processed': {
         effects: {
-            soothing: 3.5, 
-            centering: 3.0
+            calming: 3.5,       // Was soothing
+            grounding: 3.0       // Was centering
         },
         intensity: 2.5,
         category: 'special',
@@ -201,7 +212,7 @@ export const processingInfluences = {
     // Scenting and Special Methods
     'jasmine-scented': {
         effects: {
-            peaceful: 3.0, 
+            calming: 3.0, 
             soothing: 2.5
         },
         intensity: 1.6,
@@ -210,7 +221,7 @@ export const processingInfluences = {
     },
     'rose-scented': {
         effects: {
-            peaceful: 3.0, 
+            calming: 3.0, 
             soothing: 2.5
         },
         intensity: 1.5,
@@ -219,8 +230,8 @@ export const processingInfluences = {
     },
     'osmanthus-scented': {
         effects: {
-            peaceful: 2.8, 
-            balancing: 2.2
+            calming: 2.8, 
+            harmonizing: 2.2
         },
         intensity: 1.4,
         category: 'scenting',
@@ -231,7 +242,7 @@ export const processingInfluences = {
     'aged': {
         effects: {
             stabilizing: 3.5, 
-            reflective: 2.5
+            grounding: 2.5
         },
         intensity: 1.7,
         category: 'aging',
@@ -245,7 +256,7 @@ export const processingInfluences = {
     },
     'fermented': {
         effects: {
-            centering: 2.8, 
+            grounding: 2.8, 
             stabilizing: 2.5,
             comforting: 2.0
         },
@@ -267,8 +278,8 @@ export const processingInfluences = {
     'pile-fermented': {
         effects: {
             stabilizing: 3.0,
-            centering: 2.5,
-            stabilizing: 3.0
+            grounding: 2.5,
+            harmonizing: 3.0
         },
         intensity: 1.8,
         category: 'fermentation',
@@ -276,8 +287,8 @@ export const processingInfluences = {
     },
     'rolled': {
         effects: {
-            centering: 2.0,
-            balancing: 1.8
+            grounding: 2.0,
+            harmonizing: 1.8
         },
         intensity: 1.0,
         category: 'shaping',
@@ -286,7 +297,7 @@ export const processingInfluences = {
     'compressed': {
         effects: {
             stabilizing: 2.5,
-            centering: 2.0
+            grounding: 2.0
         },
         intensity: 1.3,
         category: 'shaping',
@@ -296,8 +307,8 @@ export const processingInfluences = {
     // Advanced Processing Methods
     'quantum-processed': {
         effects: {
-            clarifying: 3.5, 
-            centering: 2.8
+            focusing: 3.5, 
+            grounding: 2.8
         },
         intensity: 2.3,
         category: 'advanced',

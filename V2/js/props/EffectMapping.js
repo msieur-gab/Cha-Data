@@ -78,10 +78,11 @@ export const teaTypeEffects = {
     green: {
         description: "Green teas are known for their fresh, vegetal character and balanced effects.",
         effects: {
-            energizing: 7,
+            energizing: 5,
             focusing: 6,
             harmonizing: 5,
-            calming: 4
+            calming: 4,
+            elevating: 4
         }
     },
     white: {
@@ -90,7 +91,8 @@ export const teaTypeEffects = {
             calming: 7,
             harmonizing: 6,
             restorative: 5,
-            focusing: 4
+            focusing: 4,
+            elevating: 4
         }
     },
     yellow: {
@@ -98,7 +100,7 @@ export const teaTypeEffects = {
         effects: {
             harmonizing: 7,
             focusing: 6,
-            energizing: 5,
+            elevating: 6,
             calming: 4
         }
     },
@@ -107,43 +109,43 @@ export const teaTypeEffects = {
         effects: {
             harmonizing: 7,
             focusing: 6,
-            energizing: 5,
-            calming: 4
+            elevating: 6,
+            comforting: 5
         }
     },
     black: {
         description: "Black teas are fully oxidized, offering robust and invigorating effects.",
         effects: {
-            energizing: 8,
+            energizing: 6,
             focusing: 6,
             harmonizing: 5,
-            grounding: 4
+            grounding: 5
         }
     },
     'puerh-sheng': {
         description: "Raw puerh teas are known for their complex, evolving character.",
         effects: {
-            energizing: 7,
+            energizing: 5,
             focusing: 6,
             harmonizing: 5,
-            grounding: 4
+            grounding: 6
         }
     },
     'puerh-shou': {
         description: "Ripened puerh teas offer deep, earthy flavors and grounding effects.",
         effects: {
-            grounding: 7,
+            grounding: 8,
             harmonizing: 6,
-            comforting: 5,
+            comforting: 7,
             restorative: 4
         }
     },
     dark: {
         description: "Dark teas are known for their rich, earthy character and grounding effects.",
         effects: {
-            grounding: 7,
+            grounding: 8,
             harmonizing: 6,
-            comforting: 5,
+            comforting: 7,
             restorative: 4
         }
     }

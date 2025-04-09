@@ -5,61 +5,66 @@ export const flavorInfluences = {
     // Floral flavors generally elevate mood and promote relaxation
     floral: {
         jasmine: {
-            effects: { calming: 8, elevating: 7, clarifying: 6 },
+            effects: { calming: 8, elevating: 9, clarifying: 6 },
             intensity: 8,
             associatedFlavors: ["sweet", "perfumed", "honey"]
         },
         rose: {
-            effects: { calming: 7, elevating: 8, nurturing: 6 },
+            effects: { calming: 7, elevating: 9, nurturing: 6 },
             intensity: 7,
             associatedFlavors: ["sweet", "perfumed", "honey"]
         },
         orchid: {
-            effects: { elevating: 7, clarifying: 6, focusing: 5 },
-            intensity: 6,
+            effects: { elevating: 8, clarifying: 6, focusing: 5 },
+            intensity: 7,
             associatedFlavors: ["sweet", "perfumed", "honey", "creamy"]
         },
         lilac: {
-            effects: { elevating: 8, clarifying: 5, focusing: 4 },
-            intensity: 6,
+            effects: { elevating: 9, clarifying: 5, focusing: 4 },
+            intensity: 7,
             associatedFlavors: ["sweet", "perfumed", "spring-like"]
         },
         osmanthus: {
-            effects: { elevating: 7, harmonizing: 6, nurturing: 5 },
-            intensity: 6,
+            effects: { elevating: 8, harmonizing: 6, nurturing: 5 },
+            intensity: 7,
             associatedFlavors: ["apricot", "sweet", "honey"]
         },
         elderflower: {
-            effects: { elevating: 6, clarifying: 5, focusing: 5 },
-            intensity: 5,
+            effects: { elevating: 7, clarifying: 5, focusing: 5 },
+            intensity: 6,
             associatedFlavors: ["sweet", "delicate", "honey"]
+        },
+        honeysuckle: {
+            effects: { elevating: 8, calming: 2.0, focusing: 4 },
+            intensity: 7,
+            associatedFlavors: ["sweet", "nectar", "floral"]
         }
     },
 
     // Fruity flavors tend to elevate mood and increase energy
     fruity: {
         apple: {
-            effects: { energizing: 5, elevating: 6, harmonizing: 5 },
+            effects: { energizing: 5, elevating: 7, harmonizing: 5 },
             intensity: 5,
             associatedFlavors: ["sweet", "crisp", "light"]
         },
         pear: {
-            effects: { nurturing: 6, harmonizing: 7, calming: 5 },
+            effects: { nurturing: 6, harmonizing: 7, elevating: 6 },
             intensity: 5,
             associatedFlavors: ["sweet", "juicy", "delicate"]
         },
         peach: {
-            effects: { elevating: 7, nurturing: 6, energizing: 5 },
-            intensity: 6,
+            effects: { elevating: 8, nurturing: 6, energizing: 5 },
+            intensity: 7,
             associatedFlavors: ["sweet", "juicy", "honey"]
         },
         apricot: {
-            effects: { elevating: 7, energizing: 6, harmonizing: 5 },
-            intensity: 6,
+            effects: { elevating: 8, energizing: 6, harmonizing: 5 },
+            intensity: 7,
             associatedFlavors: ["sweet", "tangy", "bright"]
         },
         citrus: {
-            effects: { energizing: 8, clarifying: 7, focusing: 6 },
+            effects: { energizing: 8, elevating: 7, focusing: 6 },
             intensity: 7,
             associatedFlavors: ["bright", "tangy", "zesty"]
         },
@@ -82,132 +87,117 @@ export const flavorInfluences = {
 
     // Vegetal flavors tend to promote focus and clarity
     vegetal: {
-        grassy: {
-            effects: { clarifying: 7, energizing: 6, focusing: 7 },
-            intensity: 7,
-            associatedFlavors: ["fresh", "green", "bright"]
+        leafy: {
+            effects: {
+                calming: 2.0,            // Was 'soothing'
+                harmonizing: 2.0,        // Was 'balancing'
+                focusing: 2.0,           // Was 'clarifying'
+                restorative: 2.0,
+                elevating: 1.0           // Added elevating effect
+            },
+            intensity: 1.7,
+            flavors: ['spinach', 'kale', 'lettuce', 'grass']
         },
-        spinach: {
-            effects: { grounding: 6, clarifying: 5, focusing: 6 },
-            intensity: 6,
-            associatedFlavors: ["green", "mineral", "hearty"]
+        cruciferous: {
+            effects: {
+                grounding: 2.0,          // Was 'reflective'
+                harmonizing: 2.0,        // Was 'balancing'
+                grounding: 2.0,          // Was 'stabilizing'
+                focusing: 1.5            // Was 'clarifying'
+            },
+            intensity: 1.3,
+            flavors: ['broccoli', 'cabbage', 'cauliflower']
         },
-        asparagus: {
-            effects: { clarifying: 6, focusing: 7, energizing: 5 },
-            intensity: 6,
-            associatedFlavors: ["green", "bright", "fresh"]
-        },
-        artichoke: {
-            effects: { grounding: 7, clarifying: 6, focusing: 5 },
-            intensity: 5,
-            associatedFlavors: ["vegetal", "nutty", "smooth"]
-        },
-        seaweed: {
-            effects: { grounding: 8, clarifying: 6, nurturing: 7 },
-            intensity: 7,
-            associatedFlavors: ["marine", "umami", "mineral"]
-        },
-        green_beans: {
-            effects: { focusing: 6, clarifying: 5, energizing: 5 },
-            intensity: 5,
-            associatedFlavors: ["green", "fresh", "sweet"]
+        herbaceous: {
+            effects: {
+                calming: 2.0,            // Was 'soothing'
+                energizing: 1.5,         // Was 'awakening'
+                focusing: 2.0,           // Was 'clarifying'
+                restorative: 1.5,        // Was 'renewing'
+                elevating: 2.0           // Boosted from previous
+            },
+            intensity: 1.6,
+            flavors: ['parsley', 'thyme', 'mint', 'sage', 'basil']
         }
     },
 
     // Nutty and toasty flavors tend to provide grounding and comfort
-    nuttyToasty: {
-        almond: {
-            effects: { grounding: 7, comforting: 6, nurturing: 5 },
-            intensity: 6,
-            associatedFlavors: ["sweet", "toasty", "smooth"]
+    nutty_and_toasty: {
+        nuts: {
+            effects: {
+                comforting: 3.0,         // Was 'nurturing', boosted
+                grounding: 2.5,          // Was 'centering'/'stabilizing', boosted
+                harmonizing: 1.5         // Was part of 'reflective'
+            },
+            intensity: 1.5,
+            flavors: ['almond', 'hazelnut', 'walnut', 'chestnut', 'peanut']
         },
-        walnut: {
-            effects: { grounding: 8, focusing: 5, comforting: 5 },
-            intensity: 7,
-            associatedFlavors: ["woody", "earthy", "dry"]
-        },
-        chestnut: {
-            effects: { nurturing: 7, grounding: 6, comforting: 6 },
-            intensity: 6,
-            associatedFlavors: ["sweet", "roasted", "smooth"]
-        },
-        hazelnut: {
-            effects: { comforting: 7, nurturing: 6, harmonizing: 5 },
-            intensity: 6,
-            associatedFlavors: ["sweet", "creamy", "warm"]
-        },
-        toast: {
-            effects: { grounding: 6, comforting: 7, nurturing: 5 },
-            intensity: 6,
-            associatedFlavors: ["warm", "cereal", "roasted"]
-        },
-        grain: {
-            effects: { grounding: 7, nurturing: 6, harmonizing: 5 },
-            intensity: 5,
-            associatedFlavors: ["cereal", "smooth", "light"]
+        toasted: {
+            effects: {
+                comforting: 3.0,         // Was 'nurturing', boosted
+                grounding: 2.5,          // Was 'reflective'/'stabilizing', boosted
+                harmonizing: 1.5,        // Was part of 'centering'
+                restorative: 1.0         // Added restorative
+            },
+            intensity: 1.3,
+            flavors: ['bread', 'grain', 'barley', 'rice']
         }
     },
 
     // Spicy flavors tend to energize and stimulate
     spicy: {
-        cinnamon: {
-            effects: { energizing: 8, warming: 7, focusing: 6 },
-            intensity: 7,
-            associatedFlavors: ["sweet", "warm", "woody"]
+        pungent: {
+            effects: {
+                energizing: 2.0,         // Was 'revitalizing', decreased
+                focusing: 1.5,           // Was 'clarifying'
+                elevating: 2.5,          // Was 'elevating', boosted
+                restorative: 1.5         // Was 'renewing'
+            },
+            intensity: 1.6,
+            flavors: ['pepper', 'ginger', 'cinnamon', 'clove', 'anise', 'licorice']
         },
-        ginger: {
-            effects: { energizing: 8, clarifying: 7, warming: 8 },
-            intensity: 8,
-            associatedFlavors: ["spicy", "bright", "fresh"]
-        },
-        cardamom: {
-            effects: { clarifying: 7, focusing: 6, energizing: 5 },
-            intensity: 6,
-            associatedFlavors: ["aromatic", "cool", "sweet"]
-        },
-        clove: {
-            effects: { warming: 8, grounding: 7, focusing: 5 },
-            intensity: 7,
-            associatedFlavors: ["intense", "sweet", "woody"]
-        },
-        pepper: {
-            effects: { energizing: 8, warming: 7, clarifying: 6 },
-            intensity: 7,
-            associatedFlavors: ["spicy", "sharp", "aromatic"]
-        },
-        anise: {
-            effects: { clarifying: 7, focusing: 6, warming: 5 },
-            intensity: 6,
-            associatedFlavors: ["sweet", "licorice", "cooling"]
+        cooling: {
+            effects: {
+                calming: 2.5,            // Was 'soothing'/'peaceful'
+                restorative: 2.0,        // Was 'renewing'
+                harmonizing: 1.5,        // Was 'balancing'
+                elevating: 1.0           // Added elevating
+            },
+            intensity: 1.4,
+            flavors: ['menthol', 'camphor']
         }
     },
 
     // Sweet flavors tend to provide comfort and nurturing effects
     sweet: {
-        honey: {
-            effects: { nurturing: 8, comforting: 7, harmonizing: 6 },
-            intensity: 7,
-            associatedFlavors: ["sweet", "floral", "warm"]
-        },
-        caramel: {
-            effects: { comforting: 8, nurturing: 7, grounding: 6 },
-            intensity: 7,
-            associatedFlavors: ["sweet", "rich", "toasty"]
-        },
-        toffee: {
-            effects: { comforting: 8, grounding: 7, nurturing: 6 },
-            intensity: 8,
-            associatedFlavors: ["sweet", "rich", "buttery"]
-        },
-        chocolate: {
-            effects: { comforting: 8, grounding: 7, nurturing: 6 },
-            intensity: 7,
-            associatedFlavors: ["rich", "dark", "earthy"]
+        caramelized: {
+            effects: {
+                comforting: 3.0,         // Was 'comforting', boosted
+                harmonizing: 2.0,        // Was 'balancing'
+                restorative: 2.0,
+                grounding: 2.0           // Was 'centering'
+            },
+            intensity: 1.7,
+            flavors: ['honey', 'caramel', 'brown sugar', 'molasses']
         },
         vanilla: {
-            effects: { calming: 7, comforting: 8, nurturing: 6 },
-            intensity: 6,
-            associatedFlavors: ["sweet", "creamy", "warm"]
+            effects: {
+                calming: 2.5,            // Was 'peaceful'
+                restorative: 2.0,
+                harmonizing: 1.5,        // Was 'balancing'
+                comforting: 2.0          // Added comforting
+            },
+            intensity: 1.5,
+            flavors: ['vanilla']
+        },
+        chocolate: {
+            effects: {
+                comforting: 3.0,         // Boosted
+                grounding: 2.5,          // Was 'centering'/'stabilizing'
+                harmonizing: 1.5         // Was 'reflective'
+            },
+            intensity: 1.6,
+            flavors: ['cocoa', 'dark chocolate']
         },
         malt: {
             effects: { nurturing: 7, grounding: 6, comforting: 5 },
@@ -219,34 +209,40 @@ export const flavorInfluences = {
     // Earthy flavors tend to provide grounding and centering effects
     earthy: {
         soil: {
-            effects: { grounding: 9, centering: 7, comforting: 5 },
-            intensity: 7,
-            associatedFlavors: ["mineral", "damp", "rich"]
+            effects: {
+                grounding: 3.0,          // Was 'centering', boosted
+                harmonizing: 2.0,        // Was 'balancing'
+                restorative: 2.0
+            },
+            intensity: 1.8,
+            flavors: ['petrichor', 'loam', 'forest floor']
         },
-        mushroom: {
-            effects: { grounding: 8, nurturing: 6, comforting: 5 },
-            intensity: 6,
-            associatedFlavors: ["umami", "savory", "rich"]
+        minerals: {
+            effects: {
+                grounding: 2.5,          // Was 'reflective', boosted
+                focusing: 2.0,           // Was 'clarifying'
+                harmonizing: 1.5         // Was 'stabilizing'
+            },
+            intensity: 2.2,
+            flavors: ['wet stone', 'flint', 'slate']
         },
-        moss: {
-            effects: { grounding: 7, clarifying: 5, calming: 6 },
-            intensity: 5,
-            associatedFlavors: ["green", "damp", "fresh"]
+        fungal: {
+            effects: {
+                grounding: 2.8,          // Was 'centering', boosted
+                restorative: 2.0,
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 1.4,
+            flavors: ['truffle']
         },
-        forest_floor: {
-            effects: { grounding: 8, centering: 7, calming: 6 },
-            intensity: 7,
-            associatedFlavors: ["complex", "deep", "rich"]
-        },
-        petrichor: {
-            effects: { calming: 7, clarifying: 6, grounding: 5 },
-            intensity: 6,
-            associatedFlavors: ["mineral", "fresh", "damp"]
-        },
-        peat: {
-            effects: { grounding: 8, centering: 7, comforting: 5 },
-            intensity: 7,
-            associatedFlavors: ["smoky", "damp", "rich"]
+        aged: {
+            effects: {
+                grounding: 3.0,          // Was 'centering', boosted
+                harmonizing: 2.0,        // Was 'balancing'
+                comforting: 2.0          // Added comforting
+            },
+            intensity: 2.0,
+            flavors: ['aged', 'forest floor', 'leather', 'autumn leaves']
         }
     },
 
@@ -276,30 +272,47 @@ export const flavorInfluences = {
             effects: { calming: 7, centering: 6, grounding: 5 },
             intensity: 6,
             associatedFlavors: ["aromatic", "sweet", "warm"]
+        },
+        resinous: {
+            effects: {
+                grounding: 3.0,          // Was 'centering'/'stabilizing', boosted
+                focusing: 2.0,           // Was 'clarifying'
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 1.7,
+            flavors: ['pine', 'cedar', 'sandalwood']
+        },
+        fresh: {
+            effects: {
+                grounding: 2.0,          // Was 'reflective'
+                calming: 2.0,            // Was 'peaceful'
+                restorative: 2.0,        // Was 'renewing'
+                focusing: 1.5            // Was 'clarifying'
+            },
+            intensity: 1.5,
+            flavors: ['bamboo', 'oak', 'eucalyptus']
         }
     },
 
     // Roasted flavors tend to provide comfort and grounding
     roasted: {
-        char: {
-            effects: { grounding: 8, focusing: 6, energizing: 5 },
-            intensity: 7,
-            associatedFlavors: ["smoky", "dark", "bitter"]
+        smoky: {
+            effects: {
+                comforting: 3.0,         // Was 'nurturing', boosted
+                grounding: 2.5,          // Was 'centering'/'stabilizing', boosted
+                harmonizing: 1.0         // Was 'reflective'
+            },
+            intensity: 1.2,
+            flavors: ['bonfire', 'tobacco', 'burnt']
         },
-        coffee: {
-            effects: { energizing: 8, focusing: 7, clarifying: 6 },
-            intensity: 8,
-            associatedFlavors: ["bitter", "dark", "rich"]
-        },
-        burnt_sugar: {
-            effects: { comforting: 7, grounding: 6, nurturing: 5 },
-            intensity: 7,
-            associatedFlavors: ["sweet", "dark", "rich"]
-        },
-        charcoal: {
-            effects: { grounding: 8, centering: 6, focusing: 5 },
-            intensity: 7,
-            associatedFlavors: ["smoky", "mineral", "dry"]
+        nutty: {
+            effects: {
+                comforting: 3.0,         // Was 'nurturing', boosted
+                grounding: 2.5,          // Was 'centering'/'stabilizing', boosted
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 1,
+            flavors: ['roasted nuts', 'coffee']
         },
         toasted_rice: {
             effects: { comforting: 7, nurturing: 6, calming: 5 },
@@ -310,97 +323,71 @@ export const flavorInfluences = {
 
     // Aged flavors tend to provide depth and complexity
     aged: {
-        leather: {
-            effects: { grounding: 7, centering: 6, focusing: 5 },
-            intensity: 6,
-            associatedFlavors: ["earthy", "tannic", "rich"]
+        fermented: {
+            effects: {
+                grounding: 3.0,          // Was 'centering', boosted
+                harmonizing: 2.0,        // Was 'balancing'
+                restorative: 2.0,
+                comforting: 2.0          // Added comforting
+            },
+            intensity: 1.5,
+            flavors: ['leather', 'compost', 'autumn leaves']
         },
-        wood_varnish: {
-            effects: { grounding: 6, focusing: 5, centering: 5 },
-            intensity: 5,
-            associatedFlavors: ["woody", "sharp", "complex"]
-        },
-        autumn_leaves: {
-            effects: { centering: 7, calming: 6, grounding: 5 },
-            intensity: 6,
-            associatedFlavors: ["earthy", "woody", "sweet"]
-        },
-        old_books: {
-            effects: { centering: 7, focusing: 6, calming: 5 },
-            intensity: 5,
-            associatedFlavors: ["paper", "dusty", "sweet"]
-        },
-        cellar: {
-            effects: { grounding: 7, centering: 6, comforting: 5 },
-            intensity: 6,
-            associatedFlavors: ["earthy", "damp", "mineral"]
+        oxidized: {
+            effects: {
+                grounding: 2.5,          // Was 'centering'/'stabilizing', boosted
+                focusing: 1.5,           // Was 'clarifying'
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 1.3,
+            flavors: ['dried leaves', 'prune']
         }
     },
 
     // Umami flavors tend to provide satisfaction and nourishment
     umami: {
-        brothy: {
-            effects: { nurturing: 8, grounding: 7, comforting: 6 },
-            intensity: 7,
-            associatedFlavors: ["savory", "rich", "smooth"]
-        },
-        meaty: {
-            effects: { grounding: 8, energizing: 6, centering: 5 },
-            intensity: 7,
-            associatedFlavors: ["savory", "rich", "satisfying"]
+        marine: {
+            effects: {
+                focusing: 2.5,           // Was 'clarifying', boosted
+                calming: 2.0,            // Was 'soothing'
+                restorative: 2.0,
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 2.4,
+            flavors: ['seaweed', 'kombu', 'dashi']
         },
         savory: {
-            effects: { nurturing: 7, grounding: 6, comforting: 5 },
-            intensity: 6,
-            associatedFlavors: ["rich", "complex", "satisfying"]
-        },
-        miso: {
-            effects: { nurturing: 8, grounding: 7, harmonizing: 6 },
-            intensity: 7,
-            associatedFlavors: ["salty", "fermented", "rich"]
+            effects: {
+                calming: 2.0,            // Was 'soothing'
+                grounding: 2.0,          // Was 'reflective'
+                restorative: 2.0,
+                harmonizing: 1.5         // Was 'balancing'
+            },
+            intensity: 1.8,
+            flavors: ['broth', 'meat', 'mushroom']
         }
     },
 
     // Chemical or medicinal flavors - more challenging
     chemical: {
-        menthol: {
-            effects: { clarifying: 8, energizing: 7, focusing: 6 },
-            intensity: 7,
-            associatedFlavors: ["cooling", "sharp", "fresh"]
-        },
-        camphor: {
-            effects: { clarifying: 8, energizing: 6, focusing: 7 },
-            intensity: 7,
-            associatedFlavors: ["medicinal", "cooling", "sharp"]
-        },
-        pharmaceutical: {
-            effects: { focusing: 6, clarifying: 5, centering: 4 },
-            intensity: 5,
-            associatedFlavors: ["bitter", "sharp", "clean"]
-        },
-        petroleum: {
-            effects: { grounding: 5, centering: 4, focusing: 4 },
-            intensity: 5,
-            associatedFlavors: ["mineral", "sharp", "industrial"]
+        off_flavors: {
+            effects: {},
+            intensity: 0,
+            flavors: ['metallic', 'sulfurous', 'medicinal']
         }
     },
 
     // Sour flavors tend to be energizing and stimulating
     sour: {
-        tart: {
-            effects: { energizing: 7, clarifying: 6, focusing: 5 },
-            intensity: 6,
-            associatedFlavors: ["bright", "fruity", "sharp"]
-        },
-        vinegar: {
-            effects: { clarifying: 7, focusing: 6, energizing: 5 },
-            intensity: 6,
-            associatedFlavors: ["sharp", "sour", "pungent"]
-        },
-        fermented: {
-            effects: { grounding: 6, clarifying: 5, energizing: 5 },
-            intensity: 5,
-            associatedFlavors: ["complex", "tart", "funky"]
+        acidic: {
+            effects: {
+                energizing: 2.0,         // Was 'awakening'
+                focusing: 1.5,           // Was 'clarifying'
+                restorative: 1.0,        // Was 'renewing'
+                elevating: 1.5           // Was 'elevating'
+            },
+            intensity: 0.5,
+            flavors: ['sour', 'tart', 'acidic']
         }
     }
 };
@@ -410,7 +397,7 @@ export const flavorCategoryToPrimaryEffects = {
     floral: ["elevating", "calming"],
     fruity: ["elevating", "energizing"],
     vegetal: ["clarifying", "focusing"],
-    nuttyToasty: ["grounding", "comforting"],
+    nutty_and_toasty: ["grounding", "comforting"],
     spicy: ["energizing", "warming"],
     sweet: ["comforting", "nurturing"],
     earthy: ["grounding", "centering"],

@@ -244,11 +244,22 @@ export class CompoundCalculator extends BaseCalculator {
         
         // High ratio (>1.5): More L-theanine than caffeine
         if (ratio > 1.5) {
-            effects.harmonizing = {
-                description: 'The high L-theanine to caffeine ratio creates a balanced, smooth mental state.',
-                intensity: Math.min(9, Math.round(ratio * 2)),
+            effects.calming = {
+                description: 'High L-theanine creates pronounced calming effects',
+                intensity: Math.min(9, Math.round(ratio * 2.4)),
                 compound: 'l-theanine:caffeine ratio'
             };
+            
+            effects.elevating = {
+                description: 'The balanced ratio creates elevating mental clarity',
+                intensity: Math.min(8.5, Math.round(ratio * 1.8)),
+                compound: 'l-theanine:caffeine ratio'
+            };
+            
+            // Reduce energizing effect more aggressively when L-theanine is high
+            if (effects.energizing) {
+                effects.energizing.intensity = Math.max(3, effects.energizing.intensity * 0.7);
+            }
         }
         // Balanced ratio (0.8-1.5): Similar levels of L-theanine and caffeine
         else if (ratio >= 0.8) {
@@ -257,14 +268,30 @@ export class CompoundCalculator extends BaseCalculator {
                 intensity: 8,
                 compound: 'l-theanine:caffeine ratio'
             };
+            
+            // Add harmonizing effect for balanced ratios
+            effects.harmonizing = {
+                description: 'The balanced ratio creates a harmonious blend of energy and calm',
+                intensity: Math.min(8, Math.round(7 + (1.5 - Math.abs(ratio - 1.1)) * 2)),
+                compound: 'l-theanine:caffeine ratio'
+            };
         }
         // Low ratio (<0.8): More caffeine than L-theanine
         else {
             effects.energizing = {
                 description: 'The caffeine-dominant ratio provides strong energizing effects.',
-                intensity: Math.min(9, Math.round(8 - ratio * 2)),
+                intensity: Math.min(8.5, Math.round(8 - ratio * 2)),
                 compound: 'l-theanine:caffeine ratio'
             };
+            
+            // Even with low L-theanine, still provide some calming to balance
+            if (ratio > 0.4) {
+                effects.calming = {
+                    description: 'Despite caffeine dominance, L-theanine still provides some calming influence',
+                    intensity: Math.min(5, Math.round(ratio * 6)),
+                    compound: 'l-theanine:caffeine ratio'
+                };
+            }
         }
         
         return effects;
@@ -473,6 +500,87 @@ export class CompoundCalculator extends BaseCalculator {
             } else {
                 scores.focusing = Math.min(10, scores.focusing * 1.2);
             }
+        }
+        
+        return scores;
+    }
+    
+    // Calculate purely compound-based effects
+    calculateCompoundEffects(tea) {
+        tea = validateObject(tea);
+        
+        // Create initial scores object with all 8 consolidated effects set to 0
+        const scores = {
+            energizing: 0,
+            calming: 0,
+            focusing: 0,
+            harmonizing: 0,
+            grounding: 0,
+            elevating: 0,
+            comforting: 0,
+            restorative: 0
+        };
+
+        const levels = this.calculateCompoundLevels(tea);
+        
+        // Calculate Yin/Yang score
+        const yinYangScore = TeaGlobalMapping.mapCompoundRatioAndProcessingToYinYangScore(tea);
+        const yinYangNature = TeaGlobalMapping.getYinYangCategory(yinYangScore);
+
+        // Apply TCM effect mapping based on Yin/Yang nature
+        if (TeaGlobalMapping.tcmToPrimaryEffectMap && TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature]) {
+            TeaGlobalMapping.tcmToPrimaryEffectMap[yinYangNature].forEach(([effect, strength]) => {
+                // We only care about the 8 consolidated effects, ignore old names
+                if (scores.hasOwnProperty(effect)) {
+                    scores[effect] += strength;
+                }
+            });
+        }
+        
+        // Apply compound level based effects
+        if (levels.highLTheanine) {
+            scores.calming += 3.0;
+            scores.focusing += 1.5;
+            scores.restorative += 1.5;
+            scores.elevating += 1.5;      // Increased from 1.0
+            scores.grounding += 0.8;      // Added grounding effect
+        } else if (levels.moderateLTheanine) {
+            scores.calming += 2.0;
+            scores.focusing += 1.0;
+            scores.harmonizing += 1.0;
+            scores.restorative += 0.8;
+            scores.elevating += 0.5;      // Added elevating effect
+        }
+        
+        if (levels.highCaffeine) {
+            scores.energizing += 1.8;     // Further decreased from 2.0
+            scores.focusing += 1.2;
+            scores.elevating += 1.2;      // Increased from 1.0
+        } else if (levels.moderateCaffeine) {
+            scores.energizing += 1.0;     // Further decreased from 1.2
+            scores.focusing += 1.0;
+            scores.elevating += 0.8;      // Added elevating effect
+        }
+        
+        // Balanced effects
+        if (levels.balanced) {
+            scores.harmonizing += 2.5;
+            scores.focusing += 1.2;
+            scores.grounding += 1.2;      // Increased from 1.0
+            scores.elevating += 1.0;      // Increased from 0.8
+            scores.comforting += 0.5;     // Added comforting effect
+        }
+        
+        // Extreme effects
+        if (levels.extremeRatio) {
+            scores.calming += 2.5;
+            scores.restorative += 2.0;
+            scores.grounding += 1.5;      // Increased from 1.0
+            scores.comforting += 1.0;     // Added comforting effect
+        } else if (levels.veryLowRatio) {
+            scores.energizing += 1.8;     // Further decreased from 2.0
+            scores.focusing += 1.5;
+            scores.elevating += 1.2;      // Increased from 1.0
         }
         
         return scores;

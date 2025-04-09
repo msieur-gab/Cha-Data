@@ -5,8 +5,8 @@ export const processingInfluences = {
     // Heat Treatment Methods
     'steamed': {
         effects: {
-            clarifying: 3.0, 
-            peaceful: 2.5
+            focusing: 3.0,   // Was 'clarifying' - updated to standard effect name
+            calming: 2.5     // Was 'peaceful' - updated to standard effect name
         },
         intensity: 1.9,
         category: 'heat',
@@ -20,8 +20,8 @@ export const processingInfluences = {
     },
     'pan-fired': {
         effects: {
-            revitalizing: 2.8, 
-            awakening: 2.2
+            energizing: 2.6,   // Was 'revitalizing' - updated to standard effect name
+            focusing: 2.2      // Was 'awakening' - updated to standard effect name
         },
         intensity: 1.2,
         category: 'heat',
@@ -29,17 +29,26 @@ export const processingInfluences = {
     },
     'light-roast': {
         effects: {
-            peaceful: 2.5, 
-            reflective: 2.2
+            calming: 2.5,       // Was 'peaceful'
+            grounding: 2.2      // Was 'reflective'
         },
         intensity: 1.0,
         category: 'heat',
         description: 'Subtle roasting that enhances flavor subtleties and promotes gentle mental exploration'
     },
+    'minimal-roast': {
+        effects: {
+            elevating: 4.5,     // Was original
+            harmonizing: 2.0    // Was original
+        },
+        intensity: 1.2,
+        category: 'heat',
+        description: 'Very light roasting that preserves natural brightness and creates uplifting qualities'
+    },
     'medium-roast': {
         effects: {
-            nurturing: 2.8, 
-            balancing: 2.2
+            comforting: 2.8,    // Was 'nurturing'
+            harmonizing: 2.2    // Was 'balancing'
         },
         intensity: 1.5,
         category: 'heat',
@@ -53,8 +62,9 @@ export const processingInfluences = {
     },
     'heavy-roast': {
         effects: {
-            nurturing: 3.2, 
-            centering: 2.5
+            comforting: 3.8, 
+            grounding: 3.5,
+            harmonizing: 1.5
         },
         intensity: 1.8,
         category: 'heat',
@@ -68,8 +78,9 @@ export const processingInfluences = {
     },
     'charcoal-roasted': {
         effects: {
-            nurturing: 3.0, 
-            reflective: 2.8
+            comforting: 3.8, 
+            grounding: 3.5,
+            harmonizing: 2.0
         },
         intensity: 2.2,
         category: 'heat',
@@ -95,8 +106,9 @@ export const processingInfluences = {
     // Oxidation Methods
     'withered': {
         effects: {
-            peaceful: 2.5, 
-            balancing: 2.2
+            calming: 2.5,        
+            harmonizing: 2.2,    
+            elevating: 2.0
         },
         intensity: 1.2,
         category: 'oxidation',
@@ -110,8 +122,9 @@ export const processingInfluences = {
     },
     'oxidised': {
         effects: {
-            revitalizing: 3.0, 
-            awakening: 2.5
+            energizing: 2.5,    
+            focusing: 2.5,       
+            elevating: 2.5
         },
         intensity: 1.5,
         category: 'oxidation',
@@ -119,8 +132,9 @@ export const processingInfluences = {
     },
     'partial-oxidation': {
         effects: {
-            balancing: 3.0, 
-            reflective: 2.2
+            harmonizing: 3.0,    
+            grounding: 2.2,      
+            elevating: 2.5
         },
         intensity: 1.3,
         category: 'oxidation',
@@ -134,8 +148,9 @@ export const processingInfluences = {
     },
     'full-oxidation': {
         effects: {
-            revitalizing: 3.5, 
-            nurturing: 2.5
+            energizing: 2.5,    
+            comforting: 2.8,    
+            grounding: 2.5
         },
         intensity: 1.7,
         category: 'oxidation',
@@ -160,8 +175,9 @@ export const processingInfluences = {
     // Growing and Processing Methods
     'shade-grown': {
         effects: {
-            clarifying: 3.5, 
-            soothing: 2.8
+            focusing: 3.5,       
+            calming: 3.0,        
+            elevating: 3.0
         },
         intensity: 2.5,
         category: 'growing',
@@ -175,8 +191,9 @@ export const processingInfluences = {
     },
     'minimal-processing': {
         effects: {
-            elevating: 2.8, 
-            peaceful: 2.2
+            elevating: 3.5,    
+            calming: 2.2,       
+            focusing: 2.0
         },
         intensity: 2.0,
         category: 'processing',
@@ -201,17 +218,17 @@ export const processingInfluences = {
     // Post-processing Methods
     'aged': {
         effects: {
-            centering: 3.0, 
-            reflective: 2.5
+            grounding: 3.8, 
+            comforting: 2.5
         },
-        intensity: 1.8,
-        category: 'post-processing',
-        description: 'Natural maturation that develops complex characteristics and promotes contemplation',
+        intensity: 1.9,
+        category: 'aged',
+        description: 'Time-enhanced development of complex characteristics and deep mental stability',
         seasonalExplanations: {
-            spring: "Aged teas often have deeper flavors that contrast with spring's preference for freshness.",
-            summer: "Some aged teas (particularly puerh) provide cooling digestive benefits suitable for summer.",
-            fall: "Aged teas' complex, mellow character aligns beautifully with fall's deeper flavor preferences.",
-            winter: "Aged teas provide warming depth that is perfect for winter enjoyment."
+            spring: "Aged teas present developed flavors that may contrast with spring's preference for freshness.",
+            summer: "Aged teas tend to have warming properties less ideal for summer refreshment.",
+            fall: "Aging creates complex, developed notes that harmonize with fall's deeper preferences.",
+            winter: "Aged teas provide warming comfort ideal for winter consumption."
         }
     },
     'compressed': {
@@ -225,17 +242,17 @@ export const processingInfluences = {
     },
     'fermented': {
         effects: {
-            centering: 3.0, 
-            reflective: 2.8
+            grounding: 4.0, 
+            comforting: 2.5
         },
-        intensity: 1.9,
-        category: 'post-processing',
-        description: 'Microbial transformation creating rich, complex flavors and promoting introspection',
+        intensity: 1.7,
+        category: 'aged',
+        description: 'Controlled microbial transformation creating complex characteristics and grounding effects',
         seasonalExplanations: {
-            spring: "Fermented teas have earthy depth that contrasts with spring's preference for lighter notes.",
-            summer: "Fermented teas often provide cooling digestive benefits useful in summer.",
-            fall: "Fermented teas' earthy, complex character perfectly aligns with fall's deeper flavors.",
-            winter: "Fermented teas provide warming depth ideal for winter consumption."
+            spring: "Fermented teas present strong flavors that may overpower spring's preference for freshness.",
+            summer: "Fermented teas tend to have warming properties less suited for summer refreshment.",
+            fall: "Fermentation creates complex, earthy notes that harmonize perfectly with fall.",
+            winter: "Fermented teas provide deep warming comfort ideal for winter consumption."
         }
     },
     'post-processing-roasted': {
@@ -251,8 +268,8 @@ export const processingInfluences = {
     // Scented Methods
     'jasmine-scented': {
         effects: {
-            peaceful: 3.0, 
-            soothing: 2.8
+            calming: 5.8,      // Combined 'peaceful' (3.0) and 'soothing' (2.8)
+            elevating: 2.0      // Added elevating as secondary effect
         },
         intensity: 2.2,
         category: 'scented',
@@ -260,8 +277,8 @@ export const processingInfluences = {
     },
     'osmanthus-scented': {
         effects: {
-            elevating: 2.8, 
-            renewing: 2.5
+            elevating: 2.8,    // Was original
+            restorative: 2.5   // Was 'renewing'
         },
         intensity: 2.0,
         category: 'scented',
@@ -269,8 +286,8 @@ export const processingInfluences = {
     },
     'rose-scented': {
         effects: {
-            nurturing: 2.5, 
-            soothing: 3.0
+            comforting: 2.5,   // Was 'nurturing'
+            calming: 3.0       // Was 'soothing'
         },
         intensity: 2.1,
         category: 'scented',
@@ -280,8 +297,8 @@ export const processingInfluences = {
     // Modern Methods
     'CTC': {
         effects: {
-            revitalizing: 3.2, 
-            awakening: 2.8
+            energizing: 3.2,   // Was 'revitalizing'
+            focusing: 2.8      // Was 'awakening'
         },
         intensity: 1.6,
         category: 'modern',
@@ -289,8 +306,8 @@ export const processingInfluences = {
     },
     'modern-steaming': {
         effects: {
-            clarifying: 2.8, 
-            balancing: 2.0
+            focusing: 2.8,     // Was 'clarifying'
+            harmonizing: 2.0   // Was 'balancing'
         },
         intensity: 1.5,
         category: 'modern',
@@ -309,92 +326,92 @@ export const processingToPrimaryEffectMap = {
         'focusing': 1.8
     },
     'light-roast': {
-        'elevating': 2.0,
-        'harmonizing': 1.5
+        'calming': 2.5,       // Was 'peaceful'
+        'grounding': 2.2      // Was 'reflective'
     },
     'medium-roast': {
-        'comforting': 2.2,
-        'harmonizing': 1.8
+        'comforting': 2.8,    // Was 'nurturing'
+        'harmonizing': 2.2    // Was 'balancing'
     },
     'heavy-roast': {
-        'comforting': 2.8,
-        'grounding': 2.5
+        'comforting': 3.0,    // Was 'nurturing'
+        'grounding': 3.5      // Was 'earthy'
     },
     'charcoal-roasted': {
-        'comforting': 2.5,
-        'grounding': 2.2
+        'comforting': 2.5,    // Was 'nurturing'
+        'grounding': 3.0      // Was 'centered'
     },
     'sun-dried': {
-        'elevating': 1.8,
-        'calming': 1.5
+        'elevating': 1.8,     // Was 'uplifting'
+        'calming': 1.5        // Was 'peaceful'
     },
     'withered': {
-        'calming': 1.5,
-        'harmonizing': 1.2
+        'calming': 1.5,       // Was 'peaceful'
+        'harmonizing': 1.2    // Was 'balancing'
     },
     'oxidised': {
-        'energizing': 2.5,
-        'focusing': 2.0
+        'energizing': 2.5,    // Was 'revitalizing'
+        'focusing': 2.0       // Was 'awakening'
     },
     'partial-oxidation': {
-        'harmonizing': 2.5,
-        'focusing': 1.5
+        'harmonizing': 2.5,   // Was 'balancing'
+        'focusing': 1.5       // Was 'clarifying'
     },
     'full-oxidation': {
-        'energizing': 2.8,
-        'comforting': 2.0
+        'energizing': 2.8,    // Was 'revitalizing'
+        'comforting': 2.0     // Was 'nurturing'
     },
     'kill-green': {
-        'focusing': 2.2,
-        'calming': 1.5
+        'focusing': 2.2,      // Was 'clarifying'
+        'calming': 1.5        // Was 'soothing'
     },
     'shade-grown': {
-        'focusing': 3.0,
-        'calming': 2.5
+        'focusing': 3.0,      // Was 'clarifying'
+        'calming': 2.5        // Was 'peaceful'
     },
     'minimal-processing': {
-        'elevating': 2.0,
-        'calming': 1.8
+        'elevating': 2.0,     // Keep as is
+        'calming': 1.8        // Was 'peaceful'
     },
     'gaba-processed': {
-        'calming': 3.0,
-        'restorative': 2.5
+        'calming': 3.0,       // Was 'peaceful'
+        'restorative': 2.5    // Was 'renewing'
     },
     'aged': {
-        'grounding': 2.5,
-        'restorative': 2.0
+        'grounding': 2.5,     // Was 'reflective'
+        'restorative': 2.0    // Was 'renewing'
     },
     'compressed': {
-        'grounding': 2.2,
-        'comforting': 1.8
+        'grounding': 2.2,     // Was 'centered'
+        'comforting': 1.8     // Was 'nurturing'
     },
     'fermented': {
-        'grounding': 2.5,
-        'comforting': 2.2
+        'grounding': 2.5,     // Was 'earthy'
+        'comforting': 2.2     // Was 'centered'
     },
     'post-processing-roasted': {
-        'comforting': 2.8,
-        'grounding': 2.5
+        'comforting': 2.8,    // Was 'nurturing'
+        'grounding': 2.5      // Was 'reflective'
     },
     'jasmine-scented': {
-        'calming': 2.5,
-        'elevating': 2.0
+        'calming': 2.5,       // Was 'peaceful'
+        'elevating': 2.0      // Was 'uplifting'
     },
     'osmanthus-scented': {
-        'elevating': 2.5,
-        'harmonizing': 2.0
+        'elevating': 2.5,     // Was 'uplifting'
+        'harmonizing': 2.0    // Was 'balancing'
     },
     'rose-scented': {
-        'calming': 2.2,
-        'comforting': 2.0
+        'calming': 2.2,       // Was 'soothing'
+        'comforting': 2.0     // Was 'nurturing'
     },
     'CTC': {
-        'energizing': 3.0,
-        'focusing': 2.0
+        'energizing': 3.0,    // Was 'revitalizing'
+        'focusing': 2.0       // Was 'awakening'
     },
     'modern-steaming': {
-        'focusing': 2.0,
-        'calming': 1.5
+        'focusing': 2.0,      // Was 'clarifying'
+        'calming': 1.5        // Was 'soothing'
     }
 };
 

@@ -4,49 +4,94 @@
 export const flavorInfluences = {
     floral: {
         white_floral: {
-            effects: ['peaceful', 'balancing', 'soothing', 'restorative', 'renewing'],
+            effects: {
+                calming: 3.0,
+                harmonizing: 2.5, 
+                restorative: 2.0,
+                elevating: 2.5    // Boosted for floral
+            },
             intensity: 2.5,
             flavors: ['jasmine', 'lilac', 'gardenia']
         },
         herbal_floral: {
-            effects: ['peaceful', 'soothing', 'centering', 'balancing', 'restorative'],
+            effects: {
+                calming: 3.0, 
+                grounding: 2.0, 
+                harmonizing: 2.0, 
+                restorative: 2.5
+            },
             intensity: 2,
             flavors: ['chamomile', 'chrysanthemum', 'lavender', 'rose']
         },
         exotic_floral: {
-            effects: ['elevating', 'awakening', 'clarifying', 'balancing', 'peaceful'],
+            effects: {
+                elevating: 3.5,   // Substantially boosted for exotic floral
+                energizing: 1.5, 
+                focusing: 1.5, 
+                harmonizing: 2.0, 
+                calming: 1.5
+            },
             intensity: 1.9,
             flavors: ['orchid', 'ylang-ylang', 'lotus', 'magnolia']
         }
     },
     fruity: {
         stone_fruit: {
-            effects: ['awakening', 'peaceful', 'balancing', 'elevating', 'renewing'],
+            effects: {
+                energizing: 1.5, 
+                calming: 1.5, 
+                harmonizing: 2.0, 
+                elevating: 3.0,   // Boosted for stone fruit
+                restorative: 1.5
+            },
             intensity: 1.8,
             flavors: ['peach', 'apricot', 'nectarine', 'plum']
         },
         citrus: {
-            effects: ['revitalizing', 'awakening', 'elevating', 'clarifying', 'renewing'],
+            effects: {
+                energizing: 2.2,  // Was revitalizing, modified to be more balanced
+                focusing: 2.0, 
+                elevating: 2.5, 
+                restorative: 1.5
+            },
             intensity: 2,
             flavors: ['lemon', 'lime', 'orange', 'grapefruit', 'bergamot']
         },
         tropical: {
-            effects: ['awakening', 'peaceful', 'elevating', 'renewing', 'restorative'],
+            effects: {
+                energizing: 1.5, 
+                calming: 1.5, 
+                elevating: 3.0,   // Boosted for tropical fruits
+                restorative: 2.0
+            },
             intensity: 1.7,
             flavors: ['pineapple', 'mango', 'passion fruit', 'lychee', 'coconut']
         },
         berry: {
-            effects: ['peaceful', 'balancing', 'restorative', 'soothing', 'renewing'],
+            effects: {
+                calming: 2.5, 
+                harmonizing: 2.0, 
+                restorative: 2.5, 
+                comforting: 1.5    // Added comforting effect
+            },
             intensity: 1.5,
             flavors: ['strawberry', 'raspberry', 'blackberry', 'blueberry']
         },
         tree_fruit: {
-            effects: ['reflective', 'peaceful', 'stabilizing', 'centering', 'balancing'],
+            effects: {
+                grounding: 2.5,     // Was 'reflective', boosted
+                calming: 2.0, 
+                harmonizing: 2.0
+            },
             intensity: 1.3,
             flavors: ['apple', 'pear', 'quince']
         },
         dried_fruit: {
-            effects: ['comforting', 'nurturing', 'stabilizing', 'centering', 'reflective'],
+            effects: {
+                comforting: 3.0,    // Boosted considerably
+                grounding: 2.5,     // Was 'stabilizing', boosted
+                harmonizing: 1.5
+            },
             intensity: 1,
             flavors: ['raisin', 'fig', 'date']
         }

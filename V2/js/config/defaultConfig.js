@@ -11,11 +11,11 @@ export const defaultConfig = {
   
   // Component weights for different aspects of tea analysis
   componentWeights: {
-    teaType: 0.25,      // Increase tea type influence as the base
-    compounds: 0.30,    // Increase compound influence as they're more differentiating
-    processing: 0.15,   // Reduce processing influence
-    geography: 0.15,    // Reduce geographical factors
-    flavors: 0.15       // Reduce flavor profiles influence
+    teaType: 0.20,      // Decreased from 0.25
+    compounds: 0.25,    // Decreased from 0.30
+    processing: 0.20,   // Increased from 0.15
+    geography: 0.15,    // Unchanged
+    flavors: 0.20       // Increased from 0.15
   },
   
   // Thresholds for compound ratio analysis

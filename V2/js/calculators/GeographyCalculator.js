@@ -7,11 +7,17 @@ export class GeographyCalculator extends BaseCalculator {
     constructor(config) {
         super(config);
         this.geographyFactors = {};
+        this.geographicalInfluences = {}; // Add storage for geographical influences
     }
     
     // Set geography factors data
     setGeographyFactors(geographyFactors) {
         this.geographyFactors = geographyFactors || {};
+    }
+    
+    // Add compatibility method for TeaEffectCalculator
+    setGeographicalInfluences(geographicalInfluences) {
+        this.geographicalInfluences = geographicalInfluences || {};
     }
 
     // Override infer method from BaseCalculator
@@ -324,6 +330,25 @@ export class GeographyCalculator extends BaseCalculator {
                 combined[effect] += score * weight;
             });
         });
+        
+        // Apply geographic feature influences if available
+        if (this.geographicalInfluences && Object.keys(this.geographicalInfluences).length > 0) {
+            // Look for relevant geographic features in the influences
+            Object.entries(this.geographicalInfluences).forEach(([feature, data]) => {
+                if (data && data.effects) {
+                    // Apply effects from geographical influences data
+                    Object.entries(data.effects).forEach(([effect, effectValue]) => {
+                        if (!combined[effect]) {
+                            combined[effect] = 0;
+                        }
+                        // Add the influence with a moderate weight
+                        combined[effect] += effectValue * 1.2;
+                    });
+                }
+            });
+            
+            console.log("Applied geographical influences:", this.geographicalInfluences);
+        }
         
         // Normalize scores
         const maxScore = Math.max(...Object.values(combined), 1);
